@@ -1,1 +1,0 @@
-# AMOVA_paper_analyses

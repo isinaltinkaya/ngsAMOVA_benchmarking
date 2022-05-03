@@ -4,7 +4,8 @@ POP_IND_ID=list( "_".join(comb) for comb in product(list(map('pop{}'.format,rang
 IND_PAIRS=list("-".join(map(str,comb)) for comb in combinations(POP_IND_ID,2))
 
 
-REP=range(1,10,1)
+# REP=range(1,10,1)
+REP=1
 
 
 SIMULATION_ID="sim1"
@@ -15,7 +16,8 @@ SIMULATION_ID="sim1"
 # MSPRIME
 ###################################################
 
-REGION_LENGTH=range(5,70,5)
+# REGION_LENGTH=range(5,70,5)
+REGION_LENGTH=1
 
 
 
@@ -27,7 +29,8 @@ REGION_LENGTH=range(5,70,5)
 ###################################################
 
 # average per site depth
-DEPTH=[100,20,10,5,2,1,0.5,0.1]
+# DEPTH=[100,20,10,5,2,1,0.5,0.1]
+DEPTH=[1]
 
 #0.1 to 5
 #DEPTH=[100,20,10,0.01]+ [ x / pow(.1, -1) for x in range(1, 50 + 1) ]
@@ -36,48 +39,56 @@ DEPTH=[100,20,10,5,2,1,0.5,0.1]
 ###################################################
 
 
+conda_env="/maps/projects/lundbeck/scratch/pfs488/AMOVA/env/simulation_env.yml"
+
+DEF_POPS= {
+		"1" : "1 10",
+		"2" : "11 20",
+		"3" : "21 30"
+		}
+
 rule all:
 	input:
 		expand("simulations/{sid}_{srlen}MB_rep{rep}/msprime/trees/{sid}_{srlen}MB_rep{rep}.trees",
 				rep=REP,
 				sid=SIMULATION_ID,
 				srlen=REGION_LENGTH),
-		expand("simulations/{sid}_{srlen}MB_rep{rep}/msprime/ms/{sid}_{srlen}MB_rep{rep}.ms",
-				rep=REP,
-				sid=SIMULATION_ID,
-				srlen=REGION_LENGTH),
-		expand("simulations/{sid}_{srlen}MB_rep{rep}/glf/{sid}_{srlen}MB_rep{rep}_d{depth}.glf.gz",
-				rep=REP,
-				srlen=REGION_LENGTH,
-				sid=SIMULATION_ID,
-				depth=DEPTH),
-		expand("simulations/{sid}_{srlen}MB_rep{rep}/glf/pops/{sid}_{srlen}MB_rep{rep}_d{depth}_pop{pop_id}.glf.gz",
-				rep=REP,
-				srlen=REGION_LENGTH,
-				sid=SIMULATION_ID,
-				depth=DEPTH,
-				pop_id=DEF_POPS.keys()),
-		expand("simulations/{sid}_{srlen}MB_rep{rep}/glf/inds/{sid}_{srlen}MB_rep{rep}_d{depth}_pop{pop_id}_ind{ind_id}.glf.gz",
-				rep=REP,
-				srlen=REGION_LENGTH,
-				sid=SIMULATION_ID,
-				depth=DEPTH,
-				pop_id=DEF_POPS.keys(),
-				ind_id=range(1,11)),
-		expand("simulations/{sid}_{srlen}MB_rep{rep}/saf/inds/{sid}_{srlen}MB_rep{rep}_d{depth}_pop{pop_id}_ind{ind_id}.saf.idx",
-				rep=REP,
-				srlen=REGION_LENGTH,
-				sid=SIMULATION_ID,
-				depth=DEPTH,
-				pop_id=DEF_POPS.keys(),
-				ind_id=range(1,11)),
-		expand("simulations/{sid}_{srlen}MB_rep{rep}/sfs/ind_pairs/{sid}_{srlen}MB_rep{rep}_d{depth}_indpair_{pop_ind_pair}.sfs",
-				rep=REP,
-				srlen=REGION_LENGTH,
-				sid=SIMULATION_ID,
-				depth=DEPTH,
-				pop_ind_pair=IND_PAIRS),
-
+		# expand("simulations/{sid}_{srlen}MB_rep{rep}/msprime/ms/{sid}_{srlen}MB_rep{rep}.ms",
+				# rep=REP,
+				# sid=SIMULATION_ID,
+				# srlen=REGION_LENGTH),
+		# expand("simulations/{sid}_{srlen}MB_rep{rep}/glf/{sid}_{srlen}MB_rep{rep}_d{depth}.glf.gz",
+				# rep=REP,
+				# srlen=REGION_LENGTH,
+				# sid=SIMULATION_ID,
+				# depth=DEPTH),
+		# expand("simulations/{sid}_{srlen}MB_rep{rep}/glf/pops/{sid}_{srlen}MB_rep{rep}_d{depth}_pop{pop_id}.glf.gz",
+				# rep=REP,
+				# srlen=REGION_LENGTH,
+				# sid=SIMULATION_ID,
+				# depth=DEPTH,
+				# pop_id=DEF_POPS.keys()),
+		# expand("simulations/{sid}_{srlen}MB_rep{rep}/glf/inds/{sid}_{srlen}MB_rep{rep}_d{depth}_pop{pop_id}_ind{ind_id}.glf.gz",
+				# rep=REP,
+				# srlen=REGION_LENGTH,
+				# sid=SIMULATION_ID,
+				# depth=DEPTH,
+				# pop_id=DEF_POPS.keys(),
+				# ind_id=range(1,11)),
+		# expand("simulations/{sid}_{srlen}MB_rep{rep}/saf/inds/{sid}_{srlen}MB_rep{rep}_d{depth}_pop{pop_id}_ind{ind_id}.saf.idx",
+				# rep=REP,
+				# srlen=REGION_LENGTH,
+				# sid=SIMULATION_ID,
+				# depth=DEPTH,
+				# pop_id=DEF_POPS.keys(),
+				# ind_id=range(1,11)),
+		# expand("simulations/{sid}_{srlen}MB_rep{rep}/sfs/ind_pairs/{sid}_{srlen}MB_rep{rep}_d{depth}_indpair_{pop_ind_pair}.sfs",
+				# rep=REP,
+				# srlen=REGION_LENGTH,
+				# sid=SIMULATION_ID,
+				# depth=DEPTH,
+				# pop_ind_pair=IND_PAIRS),
+#
 
 rule msprime_simulation:
 	output: 
@@ -86,6 +97,8 @@ rule msprime_simulation:
 		rlen=lambda wildcards: int(float(wildcards.srlen)*1e6),
 	log:
 		"simulations/{sid}_{srlen}MB_rep{rep}/logs/msprime/{sid}_{srlen}MB_rep{rep}.ms"
+	conda:
+		conda_env
 	shell:
 		"""
 		( python3.10 scripts/sim_demography.py {output} 10 10 10 {params.rlen} )2> {log}
@@ -96,6 +109,8 @@ rule msprime2ms:
 		"simulations/{sid}_{srlen}MB_rep{rep}/msprime/ms/{sid}_{srlen}MB_rep{rep}.ms"
 	input: 
 		rules.msprime_simulation.output
+	conda:
+		conda_env
 	shell:
 		"""
 		python3.10 scripts/write_ms.py {input} {output}
@@ -107,7 +122,6 @@ rule msprime2ms:
 rule ms_to_glf:
 	input:
 		"simulations/{sid}_{srlen}MB_rep{rep}/msprime/ms/{sid}_{srlen}MB_rep{rep}.ms"
-		# "simulations/{sid}_{srlen}MB_rep{rep}/ms/{sid}_{srlen}MB_rep{rep}.ms"
 	output:
 		"simulations/{sid}_{srlen}MB_rep{rep}/glf/{sid}_{srlen}MB_rep{rep}_d{depth}.glf.gz"
 	params:

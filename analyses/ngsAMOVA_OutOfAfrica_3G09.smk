@@ -21,7 +21,8 @@ ngsAMOVA="/maps/projects/lundbeck/scratch/pfs488/AMOVA/runv_ngsAMOVA/ngsAMOVA/ng
 
 
 # Average per site depth
-DEPTH=[100,20,10,5,2,1,0.5,0.2,0.1,0.01]
+# DEPTH=[100,20,10,5,2,1,0.5,0.2,0.1,0.01]
+DEPTH=[20,10,5,2,1,0.5,0.2,0.1,0.01]
 # DEPTH=DEPTH[int(config["ND"])]
 
 # Number of replicates
@@ -43,9 +44,10 @@ species=stdpopsim.get_species("HomSap")
 
 # exclude_chr_list=['chrY']
 exclude_chr_list=['chrX','chrY']
-CONTIGID=[c for c in [co.id for co in species.genome.chromosomes] if c not in exclude_chr_list ]
+# CONTIGID=[c for c in [co.id for co in species.genome.chromosomes] if c not in exclude_chr_list ]
 # CONTIGID="chr21"
-# CONTIGID="chr22"
+CONTIGID="chr22"
+# CONTIGID=["chr20","chr21","chr22"]
 # CONTIGID=CONTIGID[int(config["NC"])]
 
 MODEL=["OutOfAfrica_3G09"]
@@ -57,14 +59,16 @@ n_pops=3
 
 samples_per_pop=[100]*3
 
-# TOLE=[7,8,9,10,11]
+# TOLE=[9,11]
 TOLE=10
 
 
+# Include sites if exists for both in the pair for each pair
+PAIRWISE=[0]
 
 def get_nInd(samples_per_pop,ploidy,minInd_p,minInd,i):
-	minInd[i]=(sum(samples_per_pop)/ploidy)*(minInd_p[i]/100)
-	
+	minInd[i]=int((sum(samples_per_pop)/ploidy)*(minInd_p[i]/100))
+
 
 # MININD_P=[50,80,90]
 # MININD_P=[90,100]
@@ -81,15 +85,39 @@ if 0 in MININD:
 
 rule all:
 	input:
-		expand("simulations/{simid}/model_{model_id}/contig_{contig}/ngsAMOVA_sfs_masked_var/tole{tole}/minInd{minInd}/{simid}-{model_id}-{contig}-rep{rep}-d{depth}-tole{tole}-minInd{minInd}_sfs.csv",
+		expand("simulations/{simid}/model_{model_id}/contig_{contig}/ngsAMOVA_sfs_masked_var/tole{tole}/minInd{minInd}/{simid}-{model_id}-{contig}-rep{rep}-d{depth}-tole{tole}-minInd{minInd}.sfs.csv",
 				simid=SIMULATION_ID,
 				model_id=MODEL,
-				minInd=MININD,
+				minInd=PAIRWISE,
 				contig=CONTIGID,
 				tole=TOLE,
 				rep=REP,
 				depth=DEPTH),
+		# expand("simulations/{simid}/model_{model_id}/contig_21-22/ngsAMOVA_sfs_masked_var/tole{tole}/minInd{minInd}/{simid}-{model_id}-chr2122-rep{rep}-d{depth}-tole{tole}-minInd{minInd}.sfs.csv",
+				# simid=SIMULATION_ID,
+				# model_id=MODEL,
+				# minInd=MININD,
+				# tole=TOLE,
+				# rep=REP,
+				# depth=DEPTH),
+		# done below
+		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/ngsAMOVA_sfs_masked_var_doTest/tole{tole}/minInd{minInd}/{simid}-{model_id}-{contig}-rep{rep}-d{depth}-tole{tole}-minInd{minInd}.emtest.csv",
+				# simid=SIMULATION_ID,
+				# model_id=MODEL,
+				# minInd=MININD,
+				# contig=CONTIGID,
+				# tole=TOLE,
+				# rep=REP,
+				# depth=DEPTH),
 
+# #
+		# expand("simulations/{simid}/model_{model_id}/contig_20-21-22/ngsAMOVA_sfs_masked_var/tole{tole}/minInd{minInd}/{simid}-{model_id}-chr202122-rep{rep}-d{depth}-tole{tole}-minInd{minInd}.sfs.csv",
+				# simid=SIMULATION_ID,
+				# model_id=MODEL,
+				# minInd=MININD,
+				# tole=TOLE,
+				# rep=REP,
+				# depth=DEPTH),
 
 # #shared_sfs= only use sites that contains data for all individuals
 # #220702 update: now this requires -onlyShared 1
@@ -97,11 +125,11 @@ rule all:
 	# input:
 		# "simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf",
 	# output:
-		# "simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var_shared_sfs/tole{tole}/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_sfs.csv",
+		# "simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var_shared_sfs/tole{tole}/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.sfs.csv",
 	# params:
 		# ngsAMOVA=ngsAMOVA,
 	# log:
-		# "simulations/{simid}/logs/model_{model_id}/contig_{contig}/masked_vcfgl_var_shared_sfs/tole{tole}/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_sfs.csv",
+		# "simulations/{simid}/logs/model_{model_id}/contig_{contig}/masked_vcfgl_var_shared_sfs/tole{tole}/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.sfs.csv",
 	# shell:
 		# """
 		# {params.ngsAMOVA} -in {input} -isSim 1 -onlyShared 1 -tole 1e-{wildcards.tole} > {output} 2> {log}
@@ -117,11 +145,11 @@ rule all:
 	# input:
 		# "simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf",
 	# output:
-		# "simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var_sfs/tole{tole}/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_sfs.csv",
+		# "simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var_sfs/tole{tole}/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.sfs.csv",
 	# params:
 		# ngsAMOVA=ngsAMOVA,
 	# log:
-		# "simulations/{simid}/logs/model_{model_id}/contig_{contig}/masked_vcfgl_var_sfs/tole{tole}/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_sfs.csv",
+		# "simulations/{simid}/logs/model_{model_id}/contig_{contig}/masked_vcfgl_var_sfs/tole{tole}/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.sfs.csv",
 	# shell:
 		# """
 		# {params.ngsAMOVA} -in {input} -isSim 1 -onlyShared 0 -tole 1e-{wildcards.tole} > {output} 2> {log}
@@ -136,14 +164,70 @@ rule run_ngsAMOVA_sfs_var_minInd:
 	input:
 		"simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf",
 	output:
-		"simulations/{simid}/model_{model_id}/contig_{contig}/ngsAMOVA_sfs_masked_var/tole{tole}/minInd{minInd}/{simid}-{model_id}-{contig}-rep{rep}-d{depth}-tole{tole}-minInd{minInd}_sfs.csv",
+		"simulations/{simid}/model_{model_id}/contig_{contig}/ngsAMOVA_sfs_masked_var/tole{tole}/minInd{minInd}/{simid}-{model_id}-{contig}-rep{rep}-d{depth}-tole{tole}-minInd{minInd}.sfs.csv",
 	params:
 		ngsAMOVA=ngsAMOVA,
+		outprefix="simulations/{simid}/model_{model_id}/contig_{contig}/ngsAMOVA_sfs_masked_var/tole{tole}/minInd{minInd}/{simid}-{model_id}-{contig}-rep{rep}-d{depth}-tole{tole}-minInd{minInd}",
 	log:
-		"simulations/{simid}/logs/model_{model_id}/contig_{contig}/ngsAMOVA_sfs_masked_var/tole{tole}/minInd{minInd}/{simid}-{model_id}-{contig}-rep{rep}-d{depth}-tole{tole}-minInd{minInd}_sfs.csv",
+		"simulations/{simid}/logs/model_{model_id}/contig_{contig}/ngsAMOVA_sfs_masked_var/tole{tole}/minInd{minInd}/{simid}-{model_id}-{contig}-rep{rep}-d{depth}-tole{tole}-minInd{minInd}.sfs.csv",
 	shell:
 		"""
-		{params.ngsAMOVA} -in {input} -isSim 1 -tole 1e-{wildcards.tole} -minInd {wildcards.minInd} > {output} 2> {log}
+		{params.ngsAMOVA} -in {input} -isSim 1 -tole 1e-{wildcards.tole} \
+				-minInd {wildcards.minInd} \
+				-doTest 1 -out {params.outprefix} 2> {log}
 		"""
 
+
+rule run_ngsAMOVA_sfs_var_minInd_doTest:
+	input:
+		"simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf",
+	output:
+		"simulations/{simid}/model_{model_id}/contig_{contig}/ngsAMOVA_sfs_masked_var_doTest/tole{tole}/minInd{minInd}/{simid}-{model_id}-{contig}-rep{rep}-d{depth}-tole{tole}-minInd{minInd}.emtest.csv",
+	params:
+		ngsAMOVA=ngsAMOVA,
+		outprefix="simulations/{simid}/model_{model_id}/contig_{contig}/ngsAMOVA_sfs_masked_var_doTest/tole{tole}/minInd{minInd}/{simid}-{model_id}-{contig}-rep{rep}-d{depth}-tole{tole}-minInd{minInd}",
+	log:
+		"simulations/{simid}/logs/model_{model_id}/contig_{contig}/ngsAMOVA_sfs_masked_var_doTest/tole{tole}/minInd{minInd}/{simid}-{model_id}-{contig}-rep{rep}-d{depth}-tole{tole}-minInd{minInd}.emtest.csv",
+	shell:
+		"""
+		{params.ngsAMOVA} -in {input} -isSim 1 -tole 1e-{wildcards.tole} \
+				-minInd {wildcards.minInd} \
+				-doTest 1 -out {params.outprefix} 2> {log}
+		"""
+
+
+rule run_ngsAMOVA_sfs_var_minInd_2122:
+	input:
+		"simulations/{simid}/model_{model_id}/contig_21-22/masked_vcfgl_var_concat/{simid}-{model_id}-rep{rep}-d{depth}.bcf",
+	output:
+		"simulations/{simid}/model_{model_id}/contig_21-22/ngsAMOVA_sfs_masked_var/tole{tole}/minInd{minInd}/{simid}-{model_id}-chr2122-rep{rep}-d{depth}-tole{tole}-minInd{minInd}.sfs.csv",
+	params:
+		ngsAMOVA=ngsAMOVA,
+		outprefix="simulations/{simid}/model_{model_id}/contig_21-22/ngsAMOVA_sfs_masked_var/tole{tole}/minInd{minInd}/{simid}-{model_id}-chr2122-rep{rep}-d{depth}-tole{tole}-minInd{minInd}",
+	log:
+		"simulations/{simid}/logs/model_{model_id}/contig_21-22/ngsAMOVA_sfs_masked_var/tole{tole}/minInd{minInd}/{simid}-{model_id}-chr2122-rep{rep}-d{depth}-tole{tole}-minInd{minInd}.sfs.csv",
+	shell:
+		"""
+		{params.ngsAMOVA} -in {input} -isSim 1 -tole 1e-{wildcards.tole} \
+				-minInd {wildcards.minInd} \
+				-doTest 0 -out {params.outprefix} 2> {log}
+		"""
+
+
+rule run_ngsAMOVA_sfs_var_minInd_202122:
+	input:
+		"simulations/{simid}/model_{model_id}/contig_20-21-22/masked_vcfgl_var_concat/{simid}-{model_id}-rep{rep}-d{depth}.bcf",
+	output:
+		"simulations/{simid}/model_{model_id}/contig_20-21-22/ngsAMOVA_sfs_masked_var/tole{tole}/minInd{minInd}/{simid}-{model_id}-chr202122-rep{rep}-d{depth}-tole{tole}-minInd{minInd}.sfs.csv",
+	params:
+		ngsAMOVA=ngsAMOVA,
+		outprefix="simulations/{simid}/model_{model_id}/contig_20-21-22/ngsAMOVA_sfs_masked_var/tole{tole}/minInd{minInd}/{simid}-{model_id}-chr202122-rep{rep}-d{depth}-tole{tole}-minInd{minInd}",
+	log:
+		"simulations/{simid}/logs/model_{model_id}/contig_20-21-22/ngsAMOVA_sfs_masked_var/tole{tole}/minInd{minInd}/{simid}-{model_id}-chr202122-rep{rep}-d{depth}-tole{tole}-minInd{minInd}.sfs.csv",
+	shell:
+		"""
+		{params.ngsAMOVA} -in {input} -isSim 1 -tole 1e-{wildcards.tole} \
+				-minInd {wildcards.minInd} \
+				-doTest 0 -out {params.outprefix} 2> {log}
+		"""
 

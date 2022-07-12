@@ -134,40 +134,44 @@ IND_PAIRS=list("-".join(map(str,comb)) for comb in combinations(indv_names,2))
 
 rule all:
 	input:
-		expand("simulations/{simid}/model_{model_id}/contig_{contig}/trees/{simid}-{model_id}-{contig}-rep{rep}.trees",
+		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/trees/{simid}-{model_id}-{contig}-rep{rep}.trees",
+				# simid=SIMULATION_ID,
+				# contig=CONTIGID,
+				# rep=REP,
+				# model_id=MODEL),
+		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_trees/{simid}-{model_id}-{contig}-rep{rep}.trees",
+				# simid=SIMULATION_ID,
+				# contig=CONTIGID,
+				# rep=REP,
+				# model_id=MODEL),
+		expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_trees/nSites.csv",
 				simid=SIMULATION_ID,
 				contig=CONTIGID,
-				rep=REP,
 				model_id=MODEL),
-		expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_trees/{simid}-{model_id}-{contig}-rep{rep}.trees",
-				simid=SIMULATION_ID,
-				contig=CONTIGID,
-				rep=REP,
-				model_id=MODEL),
-		expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcf/{simid}-{model_id}-{contig}-rep{rep}.vcf",
-				simid=SIMULATION_ID,
-				contig=CONTIGID,
-				rep=REP,
-				model_id=MODEL),
-		expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf",
-				depth=DEPTH,
-				simid=SIMULATION_ID,
-				contig=CONTIGID,
-				rep=REP,
-				model_id=MODEL),
-		expand("simulations/{simid}/model_{model_id}/contig_21-22/masked_vcfgl_var_concat/{simid}-{model_id}-rep{rep}-d{depth}.bcf",
-				depth=DEPTH,
-				simid=SIMULATION_ID,
-				contig=CONTIGID,
-				rep=REP,
-				model_id=MODEL),
-		expand("simulations/{simid}/model_{model_id}/contig_20-21-22/masked_vcfgl_var_concat/{simid}-{model_id}-rep{rep}-d{depth}.bcf",
-				depth=DEPTH,
-				simid=SIMULATION_ID,
-				contig=CONTIGID,
-				rep=REP,
-				model_id=MODEL),
-
+		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcf/{simid}-{model_id}-{contig}-rep{rep}.vcf",
+				# simid=SIMULATION_ID,
+				# contig=CONTIGID,
+				# rep=REP,
+				# model_id=MODEL),
+		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf",
+				# depth=DEPTH,
+				# simid=SIMULATION_ID,
+				# contig=CONTIGID,
+				# rep=REP,
+				# model_id=MODEL),
+		# expand("simulations/{simid}/model_{model_id}/contig_21-22/masked_vcfgl_var_concat/{simid}-{model_id}-rep{rep}-d{depth}.bcf",
+				# depth=DEPTH,
+				# simid=SIMULATION_ID,
+				# contig=CONTIGID,
+				# rep=REP,
+				# model_id=MODEL),
+		# expand("simulations/{simid}/model_{model_id}/contig_20-21-22/masked_vcfgl_var_concat/{simid}-{model_id}-rep{rep}-d{depth}.bcf",
+				# depth=DEPTH,
+				# simid=SIMULATION_ID,
+				# contig=CONTIGID,
+				# rep=REP,
+				# model_id=MODEL),
+#
 
 #############################################
 ### Prepare input files for simulations
@@ -262,30 +266,29 @@ rule masked_tree_to_masked_vcf:
 					individual_names=indv_names)
 
 
-
-
-rule masked_vcf_to_masked_vcfgl_var:
+rule masked_tree_to_simulated_nSites:
 	input:
-		rules.masked_tree_to_masked_vcf.output,
+		rules.tree_to_masked_tree.output,
 	output:
-		"simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}.vcf",
-	params:
-		vcfgl=vcfgl,
-		prefix=lambda wildcards, output: output[0].rsplit('.',1)[0],
-		seed=lambda wildcards: SEED[int(wildcards.rep)],
-		# bcf output
-		mode="b",
-		error_rate=0.002,
-	log:
-		"simulations/{simid}/logs/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}.vcf",
-	shell:
-		"""
-		({params.vcfgl} -in {input} -out {params.prefix} \
-				-depth {wildcards.depth} \
-				-err {params.error_rate}  \
-				-mode {params.mode} \
-				-seed {params.seed}) 2> {log}
-		"""
+		"simulations/{simid}/model_{model_id}/contig_{contig}/masked_trees/nSites/{simid}-{model_id}-{contig}-rep{rep}.txt",
+	run:
+		ts=tskit.load(input[0])
+		with open(output[0],"w") as of:
+			print(ts.num_sites,file=of)
+
+
+rule masked_tree_to_simulated_nSites_all:
+	input:
+		expand("simulations/{{simid}}/model_{{model_id}}/contig_{{contig}}/masked_trees/{{simid}}-{{model_id}}-{{contig}}-rep{rep}.trees",
+				rep=REP),
+	output:
+		"simulations/{simid}/model_{model_id}/contig_{contig}/masked_trees/nSites.csv",
+	run:
+		with open(output[0],"w") as of:
+			for inf in input:
+				rep=inf.split("/")[5].split("-")[3].split(".")[0]
+				ts=tskit.load(inf)
+				print(inf+','+wildcards.contig+','+rep+','+str(ts.num_sites),file=of)
 
 
 ## Using only variable sites
@@ -376,7 +379,7 @@ rule bcftools_concat_2122:
 
 
 
-# Concatenate chromosomes 21-22
+# Concatenate chromosomes 20-21-22
 rule bcftools_concat_202122:
 	input:
 		expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{{rep}}-d{{depth}}.bcf",

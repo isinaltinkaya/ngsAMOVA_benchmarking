@@ -134,17 +134,21 @@ IND_PAIRS=list("-".join(map(str,comb)) for comb in combinations(indv_names,2))
 
 rule all:
 	input:
-		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/trees/{simid}-{model_id}-{contig}-rep{rep}.trees",
-				# simid=SIMULATION_ID,
-				# contig=CONTIGID,
-				# rep=REP,
-				# model_id=MODEL),
-		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_trees/{simid}-{model_id}-{contig}-rep{rep}.trees",
-				# simid=SIMULATION_ID,
-				# contig=CONTIGID,
-				# rep=REP,
-				# model_id=MODEL),
+		expand("simulations/{simid}/model_{model_id}/contig_{contig}/trees/{simid}-{model_id}-{contig}-rep{rep}.trees",
+				simid=SIMULATION_ID,
+				contig=CONTIGID,
+				rep=REP,
+				model_id=MODEL),
+		expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_trees/{simid}-{model_id}-{contig}-rep{rep}.trees",
+				simid=SIMULATION_ID,
+				contig=CONTIGID,
+				rep=REP,
+				model_id=MODEL),
 		expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_trees/nSites.csv",
+				simid=SIMULATION_ID,
+				contig=CONTIGID,
+				model_id=MODEL),
+		expand("simulations/{simid}/model_{model_id}/contig_{contig}/trees/nSites.csv",
 				simid=SIMULATION_ID,
 				contig=CONTIGID,
 				model_id=MODEL),
@@ -159,13 +163,13 @@ rule all:
 				# contig=CONTIGID,
 				# rep=REP,
 				# model_id=MODEL),
-		# expand("simulations/{simid}/model_{model_id}/contig_21-22/masked_vcfgl_var_concat/{simid}-{model_id}-rep{rep}-d{depth}.bcf",
+		# expand("simulations/{simid}/model_{model_id}/contig_chr2122/masked_vcfgl_var_concat/{simid}-{model_id}-rep{rep}-d{depth}.bcf",
 				# depth=DEPTH,
 				# simid=SIMULATION_ID,
 				# contig=CONTIGID,
 				# rep=REP,
 				# model_id=MODEL),
-		# expand("simulations/{simid}/model_{model_id}/contig_20-21-22/masked_vcfgl_var_concat/{simid}-{model_id}-rep{rep}-d{depth}.bcf",
+		# expand("simulations/{simid}/model_{model_id}/contig_chr202122/masked_vcfgl_var_concat/{simid}-{model_id}-rep{rep}-d{depth}.bcf",
 				# depth=DEPTH,
 				# simid=SIMULATION_ID,
 				# contig=CONTIGID,
@@ -266,6 +270,32 @@ rule masked_tree_to_masked_vcf:
 					individual_names=indv_names)
 
 
+
+
+rule tree_to_simulated_nSites_all:
+	input:
+		expand("simulations/{{simid}}/model_{{model_id}}/contig_{{contig}}/trees/{{simid}}-{{model_id}}-{{contig}}-rep{rep}.trees",
+				rep=REP),
+	output:
+		"simulations/{simid}/model_{model_id}/contig_{contig}/trees/nSites.csv",
+	run:
+		with open(output[0],"w") as of:
+			for inf in input:
+				rep=inf.split("/")[5].split("-")[3].split(".")[0]
+				ts=tskit.load(inf)
+				print(inf+','+wildcards.contig+','+rep+','+str(ts.num_sites),file=of)
+
+rule tree_to_simulated_nSites:
+	input:
+		rules.simulation.output,
+	output:
+		"simulations/{simid}/model_{model_id}/contig_{contig}/trees/nSites/{simid}-{model_id}-{contig}-rep{rep}.txt",
+	run:
+		ts=tskit.load(input[0])
+		with open(output[0],"w") as of:
+			print(ts.num_sites,file=of)
+
+
 rule masked_tree_to_simulated_nSites:
 	input:
 		rules.tree_to_masked_tree.output,
@@ -360,7 +390,7 @@ rule bcftools_concat_all:
 
 
 
-# Concatenate chromosomes 21-22
+# Concatenate chromosomes chr2122
 rule bcftools_concat_2122:
 	input:
 		expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{{rep}}-d{{depth}}.bcf",
@@ -368,9 +398,9 @@ rule bcftools_concat_2122:
 				model_id=MODEL,
 				contig=CONTIG2122),
 	output:
-		"simulations/{simid}/model_{model_id}/contig_21-22/masked_vcfgl_var_concat/{simid}-{model_id}-rep{rep}-d{depth}.bcf",
+		"simulations/{simid}/model_{model_id}/contig_chr2122/masked_vcfgl_var_concat/{simid}-{model_id}-chr2122-rep{rep}-d{depth}.bcf",
 	log:
-		"simulations/{simid}/logs/model_{model_id}/contig_21-22/masked_vcfgl_var_concat/{simid}-{model_id}-rep{rep}-d{depth}.bcf",
+		"simulations/{simid}/logs/model_{model_id}/contig_chr2122/masked_vcfgl_var_concat/{simid}-{model_id}-chr2122-rep{rep}-d{depth}.bcf",
 	shell:
 		"""
 		bcftools concat -o {output} {input}
@@ -379,7 +409,7 @@ rule bcftools_concat_2122:
 
 
 
-# Concatenate chromosomes 20-21-22
+# Concatenate chromosomes chr202122
 rule bcftools_concat_202122:
 	input:
 		expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{{rep}}-d{{depth}}.bcf",
@@ -387,9 +417,9 @@ rule bcftools_concat_202122:
 				model_id=MODEL,
 				contig=CONTIG202122),
 	output:
-		"simulations/{simid}/model_{model_id}/contig_20-21-22/masked_vcfgl_var_concat/{simid}-{model_id}-rep{rep}-d{depth}.bcf",
+		"simulations/{simid}/model_{model_id}/contig_chr202122/masked_vcfgl_var_concat/{simid}-{model_id}-chr202122-rep{rep}-d{depth}.bcf",
 	log:
-		"simulations/{simid}/logs/model_{model_id}/contig_20-21-22/masked_vcfgl_var_concat/{simid}-{model_id}-rep{rep}-d{depth}.bcf",
+		"simulations/{simid}/logs/model_{model_id}/contig_chr202122/masked_vcfgl_var_concat/{simid}-{model_id}-chr202122-rep{rep}-d{depth}.bcf",
 	shell:
 		"""
 		bcftools concat -o {output} {input}

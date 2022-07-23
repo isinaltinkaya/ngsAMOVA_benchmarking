@@ -93,14 +93,6 @@ rule all:
 				rep=REP,
 				contig=CONTIGID,
 				depth=DEPTH),
-		expand("simulations/{simid}/model_{model_id}/contig_chr202122/ngsAMOVA_sfs_masked_var_v2/tole{tole}/minInd{minInd}/{simid}-{model_id}-chr202122-rep{rep}-d{depth}-tole{tole}-minInd{minInd}.sfs.csv",
-				simid=SIMULATION_ID,
-				model_id=MODEL,
-				minInd=PAIRWISE+MININD,
-				tole=TOLE,
-				rep=REP,
-				contig=CONTIGID,
-				depth=DEPTH),
 		expand("simulations/{simid}/model_{model_id}/contig_chr2122/ngsAMOVA_sfs_masked_var_v2/tole{tole}/minInd{minInd}/{simid}-{model_id}-chr2122-rep{rep}-d{depth}-tole{tole}-minInd{minInd}.sfs.csv",
 				simid=SIMULATION_ID,
 				model_id=MODEL,
@@ -315,24 +307,6 @@ rule run_ngsAMOVA_sfs_var_minInd_2122_v2:
 				# -doTest 0 -out {params.outprefix} 2> {log}
 		# """
 #
-
-rule run_ngsAMOVA_sfs_var_minInd_202122_v2:
-	input:
-		"simulations/{simid}/model_{model_id}/contig_chr202122/masked_vcfgl_var_concat/{simid}-{model_id}-chr202122-rep{rep}-d{depth}.bcf",
-	output:
-		"simulations/{simid}/model_{model_id}/contig_chr202122/ngsAMOVA_sfs_masked_var_v2/tole{tole}/minInd{minInd}/{simid}-{model_id}-chr202122-rep{rep}-d{depth}-tole{tole}-minInd{minInd}.sfs.csv",
-	params:
-		ngsAMOVA=ngsAMOVA,
-		outprefix="simulations/{simid}/model_{model_id}/contig_chr202122/ngsAMOVA_sfs_masked_var_v2/tole{tole}/minInd{minInd}/{simid}-{model_id}-chr202122-rep{rep}-d{depth}-tole{tole}-minInd{minInd}",
-	log:
-		"simulations/{simid}/logs/model_{model_id}/contig_chr202122/ngsAMOVA_sfs_masked_var_v2/tole{tole}/minInd{minInd}/{simid}-{model_id}-chr202122-rep{rep}-d{depth}-tole{tole}-minInd{minInd}.sfs.csv",
-	shell:
-		"""
-		{params.ngsAMOVA} -in {input} -isSim 1 -tole 1e-{wildcards.tole} \
-				-minInd {wildcards.minInd} \
-				-doTest 0 -out {params.outprefix} -doAMOVA 3 2> {log}
-		"""
-
 
 #true GT SFS including all sites
 rule run_ngsAMOVA_sfs_masked_var_trueSFS:

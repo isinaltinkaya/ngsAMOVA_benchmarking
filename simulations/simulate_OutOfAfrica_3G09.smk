@@ -83,11 +83,9 @@ SEED=np.random.randint(1,2**32-1,n_reps)
 species=stdpopsim.get_species("HomSap")
 recombination_map_id="HapMapII_GRCh37"
 
-exclude_chr_list=['chrX','chrY']
-CONTIGID=[c for c in [co.id for co in species.genome.chromosomes] if c not in exclude_chr_list ]
-# CONTIGID="chr22"
-# CONTIGID="chr1"
-# CONTIGID=CONTIGID[int(config['NC'])]
+# exclude_chr_list=['chrX','chrY']
+# CONTIGID=[c for c in [co.id for co in species.genome.chromosomes] if c not in exclude_chr_list ]
+CONTIGID="chr22"
 
 MODEL=["OutOfAfrica_3G09"]
 
@@ -152,17 +150,17 @@ rule all:
 				simid=SIMULATION_ID,
 				contig=CONTIGID,
 				model_id=MODEL),
-		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcf/{simid}-{model_id}-{contig}-rep{rep}.vcf",
-				# simid=SIMULATION_ID,
-				# contig=CONTIGID,
-				# rep=REP,
-				# model_id=MODEL),
-		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf",
-				# depth=DEPTH,
-				# simid=SIMULATION_ID,
-				# contig=CONTIGID,
-				# rep=REP,
-				# model_id=MODEL),
+		expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcf/{simid}-{model_id}-{contig}-rep{rep}.vcf",
+				simid=SIMULATION_ID,
+				contig=CONTIGID,
+				rep=REP,
+				model_id=MODEL),
+		expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf",
+				depth=DEPTH,
+				simid=SIMULATION_ID,
+				contig=CONTIGID,
+				rep=REP,
+				model_id=MODEL),
 		# expand("simulations/{simid}/model_{model_id}/contig_chr2122/masked_vcfgl_var_concat/{simid}-{model_id}-rep{rep}-d{depth}.bcf",
 				# depth=DEPTH,
 				# simid=SIMULATION_ID,
@@ -175,7 +173,7 @@ rule all:
 				# contig=CONTIGID,
 				# rep=REP,
 				# model_id=MODEL),
-#
+# #
 
 #############################################
 ### Prepare input files for simulations
@@ -424,5 +422,4 @@ rule bcftools_concat_202122:
 		"""
 		bcftools concat -o {output} {input}
 		"""
-
 

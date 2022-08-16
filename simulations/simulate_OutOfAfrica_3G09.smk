@@ -47,17 +47,17 @@ def get_contig_length(wildcards):
 # CONFIG
 
 
-vcfgl="/maps/projects/lundbeck/scratch/pfs488/AMOVA/simulations/vcf-gl/vcfgl"
+vcfgl="/maps/projects/lundbeck/scratch/pfs488/AMOVA/runv_vcfgl/vcfgl/vcfgl"
 
-SIMULATION_ID="sim2"
+# SIMULATION_ID="sim3"
+SIMULATION_ID="simwf"
 
 ###################################################
 # DEPTH 
 
 # average per site depth
-DEPTH=[100,20,10,5,2,1,0.5,0.2,0.1,0.01]
-# DEPTH=[100]
-# DEPTH=DEPTH[int(config["NN"])]
+# DEPTH=[100,20,10,5,2,1,0.5,0.2,0.1,0.01]
+DEPTH=[20,10,5,2,1,0.5,0.2,0.1,0.01]
 
 ###################################################
 
@@ -66,14 +66,6 @@ DEPTH=[100,20,10,5,2,1,0.5,0.2,0.1,0.01]
 n_reps=200
 REP=[*range(n_reps)]
 REP=REP[:20]
-# REP=REP[int(config["NR"])]
-
-
-
-# Set seed
-ULTIMATE_ANSWER=42
-np.random.seed(ULTIMATE_ANSWER)
-SEED=np.random.randint(1,2**32-1,n_reps)
 
 
 ###################################################
@@ -83,14 +75,10 @@ SEED=np.random.randint(1,2**32-1,n_reps)
 species=stdpopsim.get_species("HomSap")
 recombination_map_id="HapMapII_GRCh37"
 
-# exclude_chr_list=['chrX','chrY']
-# CONTIGID=[c for c in [co.id for co in species.genome.chromosomes] if c not in exclude_chr_list ]
-CONTIGID="chr22"
+exclude_chr_list=['chrX','chrY']
+CONTIGID=[c for c in [co.id for co in species.genome.chromosomes] if c not in exclude_chr_list ]
 
 MODEL=["OutOfAfrica_3G09"]
-
-CONTIG2122=['chr21','chr22']
-CONTIG202122=['chr20','chr21','chr22']
 
 
 ###################################################
@@ -132,48 +120,58 @@ IND_PAIRS=list("-".join(map(str,comb)) for comb in combinations(indv_names,2))
 
 rule all:
 	input:
-		expand("simulations/{simid}/model_{model_id}/contig_{contig}/trees/{simid}-{model_id}-{contig}-rep{rep}.trees",
-				simid=SIMULATION_ID,
-				contig=CONTIGID,
-				rep=REP,
-				model_id=MODEL),
-		expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_trees/{simid}-{model_id}-{contig}-rep{rep}.trees",
-				simid=SIMULATION_ID,
-				contig=CONTIGID,
-				rep=REP,
-				model_id=MODEL),
-		expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_trees/nSites.csv",
-				simid=SIMULATION_ID,
-				contig=CONTIGID,
-				model_id=MODEL),
-		expand("simulations/{simid}/model_{model_id}/contig_{contig}/trees/nSites.csv",
-				simid=SIMULATION_ID,
-				contig=CONTIGID,
-				model_id=MODEL),
-		expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcf/{simid}-{model_id}-{contig}-rep{rep}.vcf",
-				simid=SIMULATION_ID,
-				contig=CONTIGID,
-				rep=REP,
-				model_id=MODEL),
+		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/trees/{simid}-{model_id}-{contig}-rep{rep}.trees",
+				# simid=SIMULATION_ID,
+				# contig=CONTIGID,
+				# rep=REP,
+				# model_id=MODEL),
+		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_trees/{simid}-{model_id}-{contig}-rep{rep}.trees",
+				# simid=SIMULATION_ID,
+				# contig=CONTIGID,
+				# rep=REP,
+				# model_id=MODEL),
+		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcf/{simid}-{model_id}-{contig}-rep{rep}.vcf",
+				# simid=SIMULATION_ID,
+				# contig=CONTIGID,
+				# rep=REP,
+				# model_id=MODEL),
+		# expand("simulations/{simid}/model_{model_id}/contig_all/masked_vcf_var_concat/{simid}-{model_id}-contig_all-rep{rep}.vcf",
+				# depth=DEPTH,
+				# simid=SIMULATION_ID,
+				# rep=REP,
+				# model_id=MODEL),
+		# expand("simulations/{simid}/model_{model_id}/contig_all/subsample_100K/{simid}-{model_id}-contig_all_100K-rep{rep}.vcf",
+				# depth=DEPTH,
+				# simid=SIMULATION_ID,
+				# rep=REP,
+				# model_id=MODEL),
+		# expand("simulations/{simid}/model_{model_id}/contig_all/subsample_100K/masked_vcfgl_var/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}.bcf",
+				# depth=DEPTH,
+				# simid=SIMULATION_ID,
+				# rep=REP,
+				# model_id=MODEL),
+		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_trees/nSites.csv",
+				# simid=SIMULATION_ID,
+				# contig=CONTIGID,
+				# model_id=MODEL),
+		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/trees/nSites.csv",
+				# simid=SIMULATION_ID,
+				# contig=CONTIGID,
+				# model_id=MODEL),
+		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf",
+				# depth=DEPTH,
+				# simid=SIMULATION_ID,
+				# contig=CONTIGID,
+				# rep=REP,
+				# model_id=MODEL),
 		expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf",
 				depth=DEPTH,
 				simid=SIMULATION_ID,
-				contig=CONTIGID,
 				rep=REP,
-				model_id=MODEL),
-		# expand("simulations/{simid}/model_{model_id}/contig_chr2122/masked_vcfgl_var_concat/{simid}-{model_id}-rep{rep}-d{depth}.bcf",
-				# depth=DEPTH,
-				# simid=SIMULATION_ID,
-				# contig=CONTIGID,
-				# rep=REP,
-				# model_id=MODEL),
-		# expand("simulations/{simid}/model_{model_id}/contig_chr202122/masked_vcfgl_var_concat/{simid}-{model_id}-rep{rep}-d{depth}.bcf",
-				# depth=DEPTH,
-				# simid=SIMULATION_ID,
-				# contig=CONTIGID,
-				# rep=REP,
-				# model_id=MODEL),
-# #
+				model_id=MODEL,
+
+				contig=["chr22"])
+
 
 #############################################
 ### Prepare input files for simulations
@@ -212,12 +210,18 @@ rule simulation:
 		r_map_downloaded_flag,
 	output: 
 		"simulations/{simid}/model_{model_id}/contig_{contig}/trees/{simid}-{model_id}-{contig}-rep{rep}.trees",
+	params:
+		seedfile="simulations/{simid}/model_{model_id}/contig_{contig}/trees/.seed.{simid}-{model_id}-{contig}-rep{rep}.trees",
 	run:
 		model=species.get_demographic_model(wildcards.model_id)
 		contig = species.get_contig(wildcards.contig, genetic_map=recombination_map_id)
 		samples = model.get_samples(*haplo_list)
 		engine = stdpopsim.get_engine("msprime")
-		ts = engine.simulate(model,contig, samples, seed=SEED[int(wildcards.rep)])
+		seedval=np.random.randint(2**20) + (100*int(wildcards.rep))  + int(CONTIGID.index(str(wildcards.contig)))
+		with open(params.seedfile,"w") as seedout:
+			print("Contig index: "+str(CONTIGID.index(str(wildcards.contig)))+",chr: "+str(wildcards.contig)+", rep:"+str(wildcards.rep),file=seedout)
+			print("Seed value: "+str(seedval), file=seedout)
+		ts = engine.simulate(model,contig, samples, seed=seedval, msprime_model="dtwf")
 		with open(output[0],"w") as tsout:
 			ts.dump(tsout)
 
@@ -269,54 +273,54 @@ rule masked_tree_to_masked_vcf:
 
 
 
-
-rule tree_to_simulated_nSites_all:
-	input:
-		expand("simulations/{{simid}}/model_{{model_id}}/contig_{{contig}}/trees/{{simid}}-{{model_id}}-{{contig}}-rep{rep}.trees",
-				rep=REP),
-	output:
-		"simulations/{simid}/model_{model_id}/contig_{contig}/trees/nSites.csv",
-	run:
-		with open(output[0],"w") as of:
-			for inf in input:
-				rep=inf.split("/")[5].split("-")[3].split(".")[0]
-				ts=tskit.load(inf)
-				print(inf+','+wildcards.contig+','+rep+','+str(ts.num_sites),file=of)
-
-rule tree_to_simulated_nSites:
-	input:
-		rules.simulation.output,
-	output:
-		"simulations/{simid}/model_{model_id}/contig_{contig}/trees/nSites/{simid}-{model_id}-{contig}-rep{rep}.txt",
-	run:
-		ts=tskit.load(input[0])
-		with open(output[0],"w") as of:
-			print(ts.num_sites,file=of)
-
-
-rule masked_tree_to_simulated_nSites:
-	input:
-		rules.tree_to_masked_tree.output,
-	output:
-		"simulations/{simid}/model_{model_id}/contig_{contig}/masked_trees/nSites/{simid}-{model_id}-{contig}-rep{rep}.txt",
-	run:
-		ts=tskit.load(input[0])
-		with open(output[0],"w") as of:
-			print(ts.num_sites,file=of)
-
-
-rule masked_tree_to_simulated_nSites_all:
-	input:
-		expand("simulations/{{simid}}/model_{{model_id}}/contig_{{contig}}/masked_trees/{{simid}}-{{model_id}}-{{contig}}-rep{rep}.trees",
-				rep=REP),
-	output:
-		"simulations/{simid}/model_{model_id}/contig_{contig}/masked_trees/nSites.csv",
-	run:
-		with open(output[0],"w") as of:
-			for inf in input:
-				rep=inf.split("/")[5].split("-")[3].split(".")[0]
-				ts=tskit.load(inf)
-				print(inf+','+wildcards.contig+','+rep+','+str(ts.num_sites),file=of)
+#
+# rule tree_to_simulated_nSites_all:
+	# input:
+		# expand("simulations/{{simid}}/model_{{model_id}}/contig_{{contig}}/trees/{{simid}}-{{model_id}}-{{contig}}-rep{rep}.trees",
+				# rep=REP),
+	# output:
+		# "simulations/{simid}/model_{model_id}/contig_{contig}/trees/nSites.csv",
+	# run:
+		# with open(output[0],"w") as of:
+			# for inf in input:
+				# rep=inf.split("/")[5].split("-")[3].split(".")[0]
+				# ts=tskit.load(inf)
+				# print(inf+','+wildcards.contig+','+rep+','+str(ts.num_sites),file=of)
+# #
+# rule tree_to_simulated_nSites:
+	# input:
+		# rules.simulation.output,
+	# output:
+		# "simulations/{simid}/model_{model_id}/contig_{contig}/trees/nSites/{simid}-{model_id}-{contig}-rep{rep}.txt",
+	# run:
+		# ts=tskit.load(input[0])
+		# with open(output[0],"w") as of:
+			# print(ts.num_sites,file=of)
+#
+# #
+# rule masked_tree_to_simulated_nSites:
+	# input:
+		# rules.tree_to_masked_tree.output,
+	# output:
+		# "simulations/{simid}/model_{model_id}/contig_{contig}/masked_trees/nSites/{simid}-{model_id}-{contig}-rep{rep}.txt",
+	# run:
+		# ts=tskit.load(input[0])
+		# with open(output[0],"w") as of:
+			# print(ts.num_sites,file=of)
+#
+#
+# rule masked_tree_to_simulated_nSites_all:
+	# input:
+		# expand("simulations/{{simid}}/model_{{model_id}}/contig_{{contig}}/masked_trees/{{simid}}-{{model_id}}-{{contig}}-rep{rep}.trees",
+				# rep=REP),
+	# output:
+		# "simulations/{simid}/model_{model_id}/contig_{contig}/masked_trees/nSites.csv",
+	# run:
+		# with open(output[0],"w") as of:
+			# for inf in input:
+				# rep=inf.split("/")[5].split("-")[3].split(".")[0]
+				# ts=tskit.load(inf)
+				# print(inf+','+wildcards.contig+','+rep+','+str(ts.num_sites),file=of)
 
 
 ## Using only variable sites
@@ -328,12 +332,160 @@ rule masked_vcf_to_masked_vcfgl_var:
 	params:
 		vcfgl=vcfgl,
 		prefix="simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}-d{depth}",
-		seed=lambda wildcards: SEED[int(wildcards.rep)],
 		# bcf output
 		mode="b",
 		error_rate=0.002,
 	log:
 		"simulations/{simid}/logs/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf"
+	shell:
+		"""
+		RNG_SEED=$(( {wildcards.rep} + 1 ))
+
+		({params.vcfgl} -in {input} -out {params.prefix} \
+				-depth {wildcards.depth} \
+				-err {params.error_rate}  \
+				-mode {params.mode} \
+				-explode 0 \
+				-seed ${{RNG_SEED}} ) 2> {log}
+		"""
+
+
+#
+# rule masked_vcf_to_masked_vcfgl:
+	# input:
+		# "simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcf/{simid}-{model_id}-{contig}-rep{rep}.vcf",
+	# output:
+		# "simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf"
+	# params:
+		# vcfgl=vcfgl,
+		# prefix="simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl/{simid}-{model_id}-{contig}-rep{rep}-d{depth}",
+		# seed=lambda wildcards: SEED[int(wildcards.rep)],
+		# # bcf output
+		# mode="b",
+		# error_rate=0.002,
+	# log:
+		# "simulations/{simid}/logs/model_{model_id}/contig_{contig}/masked_vcfgl/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf"
+	# shell:
+		# """
+		# ({params.vcfgl} -in {input} -out {params.prefix} \
+				# -depth {wildcards.depth} \
+				# -err {params.error_rate}  \
+				# -mode {params.mode} \
+				# -explode 1 \
+				# -seed {params.seed}) 2> {log}
+		# """
+#
+
+#
+# # Concatenate all chromosomes
+# rule bcftools_concat_all:
+	# input:
+		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{{rep}}-d{{depth}}.bcf",
+				# simid=SIMULATION_ID,
+				# model_id=MODEL,
+				# contig=CONTIGID),
+	# output:
+		# "simulations/{simid}/model_{model_id}/contig_all/masked_vcfgl_var_concat/{simid}-{model_id}-rep{rep}-d{depth}.bcf",
+	# log:
+		# "simulations/{simid}/logs/model_{model_id}/contig_all/masked_vcfgl_var_concat/{simid}-{model_id}-rep{rep}-d{depth}.bcf",
+	# shell:
+		# """
+		# bcftools concat -o {output} {input}
+		# """
+#
+
+
+
+# Concatenate all chromosomes pre simulation with vcfgl
+rule bcftools_concat_all_prevcf:
+	input:
+		expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcf/{simid}-{model_id}-{contig}-rep{{rep}}.vcf",
+				simid=SIMULATION_ID,
+				model_id=MODEL,
+				contig=CONTIGID),
+	output:
+		"simulations/{simid}/model_{model_id}/contig_all/masked_vcf_var_concat/{simid}-{model_id}-contig_all-rep{rep}.vcf",
+	log:
+		"simulations/{simid}/logs/model_{model_id}/contig_all/masked_vcf_var_concat/{simid}-{model_id}-contig_all-rep{rep}.vcf",
+	shell:
+		"""
+		bcftools concat -o {output} {input}
+		"""
+
+
+rule subsample_100K_sites:
+	input:
+		"simulations/{simid}/model_{model_id}/contig_all/masked_vcf_var_concat/{simid}-{model_id}-contig_all-rep{rep}.vcf",
+	output:
+		"simulations/{simid}/model_{model_id}/contig_all/subsample_100K/{simid}-{model_id}-contig_all_100K-rep{rep}.vcf",
+	shell:
+		"""
+		RNG_SEED=$(( {wildcards.rep} + 1 )) 
+		bcftools view -h {input} > {output}.hdr
+		bcftools view -H {input} > {output}.tmp
+
+		/maps/projects/lundbeck/scratch/pfs488/AMOVA/simulations/msprime/subsample_100K_sites/sample/sample  --preserve-order --sample-without-replacement --rng-seed=${{RNG_SEED}} --sample-size=100000 {output}.tmp > {output}.subtmp
+
+		cat {output}.hdr {output}.subtmp > {output}
+		rm {output}.hdr {output}.subtmp {output}.tmp
+		"""
+
+
+
+#
+# # Concatenate chromosomes chr2122
+# rule bcftools_concat_2122:
+	# input:
+		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{{rep}}-d{{depth}}.bcf",
+				# simid=SIMULATION_ID,
+				# model_id=MODEL,
+				# contig=CONTIG2122),
+	# output:
+		# "simulations/{simid}/model_{model_id}/contig_chr2122/masked_vcfgl_var_concat/{simid}-{model_id}-chr2122-rep{rep}-d{depth}.bcf",
+	# log:
+		# "simulations/{simid}/logs/model_{model_id}/contig_chr2122/masked_vcfgl_var_concat/{simid}-{model_id}-chr2122-rep{rep}-d{depth}.bcf",
+	# shell:
+		# """
+		# bcftools concat -o {output} {input}
+		# """
+
+
+
+
+# # Concatenate chromosomes chr202122
+# rule bcftools_concat_202122:
+	# input:
+		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{{rep}}-d{{depth}}.bcf",
+				# simid=SIMULATION_ID,
+				# model_id=MODEL,
+				# contig=CONTIG202122),
+	# output:
+		# "simulations/{simid}/model_{model_id}/contig_chr202122/masked_vcfgl_var_concat/{simid}-{model_id}-chr202122-rep{rep}-d{depth}.bcf",
+	# log:
+		# "simulations/{simid}/logs/model_{model_id}/contig_chr202122/masked_vcfgl_var_concat/{simid}-{model_id}-chr202122-rep{rep}-d{depth}.bcf",
+	# shell:
+		# """
+		# bcftools concat -o {output} {input}
+		# """
+
+
+
+
+## Using only variable sites
+rule masked_100K_vcf_to_masked_vcfgl_var:
+	input:
+		"simulations/{simid}/model_{model_id}/contig_all/subsample_100K/{simid}-{model_id}-contig_all_100K-rep{rep}.vcf",
+	output:
+		"simulations/{simid}/model_{model_id}/contig_all/subsample_100K/masked_vcfgl_var/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}.bcf"
+	params:
+		vcfgl=vcfgl,
+		prefix="simulations/{simid}/model_{model_id}/contig_all/subsample_100K/masked_vcfgl_var/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}",
+		seed=lambda wildcards: np.random.randint(2**20) + (100*int(wildcards.rep)),
+		# bcf output
+		mode="b",
+		error_rate=0.002,
+	log:
+		"simulations/{simid}/logs/model_{model_id}/contig_all/subsample_100K/masked_vcfgl_var/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}.bcf"
 	shell:
 		"""
 		({params.vcfgl} -in {input} -out {params.prefix} \
@@ -344,82 +496,4 @@ rule masked_vcf_to_masked_vcfgl_var:
 				-seed {params.seed}) 2> {log}
 		"""
 
-
-
-rule masked_vcf_to_masked_vcfgl:
-	input:
-		"simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcf/{simid}-{model_id}-{contig}-rep{rep}.vcf",
-	output:
-		"simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf"
-	params:
-		vcfgl=vcfgl,
-		prefix="simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl/{simid}-{model_id}-{contig}-rep{rep}-d{depth}",
-		seed=lambda wildcards: SEED[int(wildcards.rep)],
-		# bcf output
-		mode="b",
-		error_rate=0.002,
-	log:
-		"simulations/{simid}/logs/model_{model_id}/contig_{contig}/masked_vcfgl/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf"
-	shell:
-		"""
-		({params.vcfgl} -in {input} -out {params.prefix} \
-				-depth {wildcards.depth} \
-				-err {params.error_rate}  \
-				-mode {params.mode} \
-				-explode 1 \
-				-seed {params.seed}) 2> {log}
-		"""
-
-# Concatenate all chromosomes
-rule bcftools_concat_all:
-	input:
-		expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{{rep}}-d{{depth}}.bcf",
-				simid=SIMULATION_ID,
-				model_id=MODEL,
-				contig=CONTIGID),
-	output:
-		"simulations/{simid}/model_{model_id}/contig_all/masked_vcfgl_var_concat/{simid}-{model_id}-rep{rep}-d{depth}.bcf",
-	log:
-		"simulations/{simid}/logs/model_{model_id}/contig_all/masked_vcfgl_var_concat/{simid}-{model_id}-rep{rep}-d{depth}.bcf",
-	shell:
-		"""
-		bcftools concat -o {output} {input}
-		"""
-
-
-
-# Concatenate chromosomes chr2122
-rule bcftools_concat_2122:
-	input:
-		expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{{rep}}-d{{depth}}.bcf",
-				simid=SIMULATION_ID,
-				model_id=MODEL,
-				contig=CONTIG2122),
-	output:
-		"simulations/{simid}/model_{model_id}/contig_chr2122/masked_vcfgl_var_concat/{simid}-{model_id}-chr2122-rep{rep}-d{depth}.bcf",
-	log:
-		"simulations/{simid}/logs/model_{model_id}/contig_chr2122/masked_vcfgl_var_concat/{simid}-{model_id}-chr2122-rep{rep}-d{depth}.bcf",
-	shell:
-		"""
-		bcftools concat -o {output} {input}
-		"""
-
-
-
-
-# Concatenate chromosomes chr202122
-rule bcftools_concat_202122:
-	input:
-		expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{{rep}}-d{{depth}}.bcf",
-				simid=SIMULATION_ID,
-				model_id=MODEL,
-				contig=CONTIG202122),
-	output:
-		"simulations/{simid}/model_{model_id}/contig_chr202122/masked_vcfgl_var_concat/{simid}-{model_id}-chr202122-rep{rep}-d{depth}.bcf",
-	log:
-		"simulations/{simid}/logs/model_{model_id}/contig_chr202122/masked_vcfgl_var_concat/{simid}-{model_id}-chr202122-rep{rep}-d{depth}.bcf",
-	shell:
-		"""
-		bcftools concat -o {output} {input}
-		"""
 

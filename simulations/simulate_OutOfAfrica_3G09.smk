@@ -57,7 +57,8 @@ SIMULATION_ID="simwf"
 
 # average per site depth
 # DEPTH=[100,20,10,5,2,1,0.5,0.2,0.1,0.01]
-DEPTH=[20,10,5,2,1,0.5,0.2,0.1,0.01]
+# DEPTH=[20,10,5,2,1,0.5,0.2,0.1,0.01]
+DEPTH=[10,5,2,1,0.5,0.2,0.1,0.01]
 
 ###################################################
 
@@ -66,6 +67,7 @@ DEPTH=[20,10,5,2,1,0.5,0.2,0.1,0.01]
 n_reps=200
 REP=[*range(n_reps)]
 REP=REP[:20]
+# REP=REP[:5]
 
 
 ###################################################
@@ -77,6 +79,8 @@ recombination_map_id="HapMapII_GRCh37"
 
 exclude_chr_list=['chrX','chrY']
 CONTIGID=[c for c in [co.id for co in species.genome.chromosomes] if c not in exclude_chr_list ]
+
+# CONTIGID=CONTIGID[config["cidx"]]
 
 MODEL=["OutOfAfrica_3G09"]
 
@@ -116,10 +120,49 @@ IND_PAIRS=list("-".join(map(str,comb)) for comb in combinations(indv_names,2))
 ###################################################
 
 
-
-
 rule all:
 	input:
+		expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/windowBcf/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_win{winsize}MB_win{winid}.bcf",
+				depth=DEPTH,
+				simid=SIMULATION_ID,
+				contig=CONTIGID,
+				rep=REP,
+				model_id=MODEL,
+				winsize=[100,50],
+				winid=1),
+		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf.csi",
+				# depth=DEPTH,
+				# simid=SIMULATION_ID,
+				# contig=CONTIGID,
+				# rep=REP,
+				# model_id=MODEL),
+		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/windowBed/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_win{winsize}MB.bed",
+				# depth=10,#using depth 10 to construct window ranges
+				# simid=SIMULATION_ID,
+				# contig=CONTIGID,
+				# rep=REP,
+				# model_id=MODEL,
+				# winsize=[100,50]),
+		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/windowBed/.fin.{simid}-{model_id}-{contig}-rep{rep}-d{depth}_win{winsize}MB.bed",
+				# depth=10,#using depth 10 to construct window ranges
+				# simid=SIMULATION_ID,
+				# contig=CONTIGID,
+				# rep=REP,
+				# model_id=MODEL,
+				# winsize=[100,50]),
+				# # winid=[1,2]),
+		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf",
+				# contig=CONTIGID,
+				# depth=DEPTH,
+				# simid=SIMULATION_ID,
+				# rep=REP,
+				# model_id=MODEL),
+		# expand("simulations/{simid}/model_{model_id}/contig_all/masked_vcfgl_var/{simid}-{model_id}-contig_all-rep{rep}-d{depth}.bcf",
+				# contig=CONTIGID,
+				# depth=DEPTH,
+				# simid=SIMULATION_ID,
+				# rep=REP,
+				# model_id=MODEL),
 		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/trees/{simid}-{model_id}-{contig}-rep{rep}.trees",
 				# simid=SIMULATION_ID,
 				# contig=CONTIGID,
@@ -164,13 +207,12 @@ rule all:
 				# contig=CONTIGID,
 				# rep=REP,
 				# model_id=MODEL),
-		expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf",
-				depth=DEPTH,
-				simid=SIMULATION_ID,
-				rep=REP,
-				model_id=MODEL,
-
-				contig=["chr22"])
+		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf",
+				# depth=DEPTH,
+				# simid=SIMULATION_ID,
+				# rep=REP,
+				# model_id=MODEL,
+				# contig=["chr22"])
 
 
 #############################################
@@ -374,9 +416,9 @@ rule masked_vcf_to_masked_vcfgl_var:
 				# -explode 1 \
 				# -seed {params.seed}) 2> {log}
 		# """
-#
 
-#
+
+
 # # Concatenate all chromosomes
 # rule bcftools_concat_all:
 	# input:
@@ -392,7 +434,7 @@ rule masked_vcf_to_masked_vcfgl_var:
 		# """
 		# bcftools concat -o {output} {input}
 		# """
-#
+
 
 
 
@@ -407,6 +449,25 @@ rule bcftools_concat_all_prevcf:
 		"simulations/{simid}/model_{model_id}/contig_all/masked_vcf_var_concat/{simid}-{model_id}-contig_all-rep{rep}.vcf",
 	log:
 		"simulations/{simid}/logs/model_{model_id}/contig_all/masked_vcf_var_concat/{simid}-{model_id}-contig_all-rep{rep}.vcf",
+	shell:
+		"""
+		bcftools concat -o {output} {input}
+		"""
+
+
+# Concatenate all chromosomes after simulation with vcfgl
+rule bcftools_concat_all:
+	input:
+		expand("simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf",
+				contig=CONTIGID,
+				depth=DEPTH,
+				simid=SIMULATION_ID,
+				rep=REP,
+				model_id=MODEL)
+	output:
+		"simulations/{simid}/model_{model_id}/contig_all/masked_vcfgl_var/{simid}-{model_id}-contig_all-rep{rep}-d{depth}.bcf",
+	log:
+		"simulations/{simid}/logs/model_{model_id}/contig_all/masked_vcfgl_var/{simid}-{model_id}-contig_all-rep{rep}-d{depth}.bcf",
 	shell:
 		"""
 		bcftools concat -o {output} {input}
@@ -432,7 +493,7 @@ rule subsample_100K_sites:
 
 
 
-#
+
 # # Concatenate chromosomes chr2122
 # rule bcftools_concat_2122:
 	# input:
@@ -496,4 +557,81 @@ rule masked_100K_vcf_to_masked_vcfgl_var:
 				-seed {params.seed}) 2> {log}
 		"""
 
+
+rule getWindows:
+	input:
+		"simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf"
+	output:
+		"simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/windowBed/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_win{winsize}MB.bed"
+	params:
+		 runsh="/maps/projects/lundbeck/scratch/pfs488/AMOVA/simulations/AMOVA_paper_analyses/scripts/getWindowBedFromVcf.sh",
+		 win=lambda wildcards: int(1e6*int(wildcards.winsize)),
+	shell:
+		"""
+		bash {params.runsh} {input} {params.win} {output}.range {output}
+		"""
+
+# rule getWindows:
+	# input:
+		# "simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcf/{simid}-{model_id}-{contig}-rep{rep}.vcf"
+	# output:
+		# "simulations/{simid}/model_{model_id}/contig_{contig}/windowBed/{simid}-{model_id}-{contig}-rep{rep}_win{winsize}MB.bed"
+	# params:
+         # runsh="/maps/projects/lundbeck/scratch/pfs488/AMOVA/simulations/AMOVA_paper_analyses/scripts/getWindowBedFromVcf.sh",
+		# win=lambda wildcards: int(1e6*int(wildcards.winsize)),
+	# shell:
+		# """
+		# bash {params.runsh} {input} {params.win} {output}.range {output}
+		# """
+
+
+rule indexBcf:
+	input:
+		"simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf"
+	output:
+		"simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf.csi"
+	shell:
+		"""
+		bcftools index {input}
+		"""
+
+
+
+
+rule parseWindows:
+	input:
+		"simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/windowBed/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_win{winsize}MB.bed"
+	output:
+		"simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/windowBed/.fin.{simid}-{model_id}-{contig}-rep{rep}-d{depth}_win{winsize}MB.bed"
+	params:
+		runsh="/maps/projects/lundbeck/scratch/pfs488/AMOVA/simulations/AMOVA_paper_analyses/scripts/parseWindowsFromBed.sh",
+	shell:
+		"""
+		bash {params.runsh} {input} {output}
+		"""
+
+
+# rule splitVcfByWindows:
+	# input:
+		# bcf="simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf",
+		# bed="simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/windowBed/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_win{winsize}MB_win{winid}",
+	# output:
+		# "simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/windowBcf/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_win{winsize}MB_win{winid}.bcf"
+	# shell:
+		# """
+		# bcftools view {input.bcf} -R {input.bed} > {output}
+		# """
+
+
+rule splitVcfByWindows_useDepth10:
+	input:
+		bcf="simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf",
+		csi="simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf.csi",
+		bed="simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/windowBed/{simid}-{model_id}-{contig}-rep{rep}-d10_win{winsize}MB_win{winid}",
+	output:
+		"simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/windowBcf/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_win{winsize}MB_win{winid}.bcf"
+	shell:
+		"""
+		bcftools view {input.bcf} -R {input.bed} > {output}
+		"""
 

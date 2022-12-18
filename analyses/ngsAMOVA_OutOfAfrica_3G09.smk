@@ -19,15 +19,14 @@ SIMULATION_ID="simwf"
 
 ###################################################
 # Version for running / not active develop dir
-ngsAMOVA="/maps/projects/lundbeck/scratch/pfs488/AMOVA/runv_ngsAMOVA/ngsAMOVA/ngsAMOVA"
+# ngsAMOVA="/maps/projects/lundbeck/scratch/pfs488/AMOVA/runv_ngsAMOVA/ngsAMOVA/ngsAMOVA"
 
+#version disabling amova get only dist mat
+ngsAMOVA="/maps/projects/lundbeck/scratch/pfs488/AMOVA/ngsAMOVA_vDisableAmova/ngsAMOVA/ngsAMOVA"
 
 # Average per site depth
 # DEPTH=[20,10,5,2,1,0.5,0.2,0.1,0.01]
-DEPTH=[20,10,5,2,1,0.5,0.2,0.1]
-# DEPTH=[20,10,5,2,1]
-# DEPTH=[0.5,0.2,0.1]
-# DEPTH=DEPTH[int(config["ND"])]
+DEPTH=[10,5,2,1,0.5,0.2,0.1,0.01]
 
 # Number of replicates
 n_reps=200
@@ -35,6 +34,8 @@ n_reps=200
 REP=[*range(n_reps)]
 # REP=REP[int(config["NN"])]
 REP=REP[:20]
+# REP=REP[:5]
+# REP=REP[:1]
 
 
 # Set seed
@@ -46,13 +47,10 @@ SEED=np.random.randint(1,2**32-1,n_reps)
 species=stdpopsim.get_species("HomSap")
 
 
-# exclude_chr_list=['chrY']
 exclude_chr_list=['chrX','chrY']
-# CONTIGID=[c for c in [co.id for co in species.genome.chromosomes] if c not in exclude_chr_list ]
-# CONTIGID="chr21"
-CONTIGID="chr22"
-# CONTIGID=["chr20","chr21","chr22"]
-# CONTIGID=CONTIGID[int(config["NC"])]
+CONTIGID=[c for c in [co.id for co in species.genome.chromosomes] if c not in exclude_chr_list ]
+
+CONTIGID=CONTIGID[config["cc"]]
 
 MODEL=["OutOfAfrica_3G09"]
 
@@ -64,7 +62,8 @@ n_pops=3
 samples_per_pop=[100]*3
 
 # TOLE=[9,11]
-TOLE=10
+# TOLE=10
+TOLE=7
 
 
 # Include sites if exists for both in the pair for each pair
@@ -85,92 +84,191 @@ if 0 in MININD:
 
 ###################################################
 
+# ITERSET=[50,100,150,200,250]
+# THRSET=[i for i in range(1,10)]
+# THRSET=[1,10]
+# THRSET=1
 
+
+AMOVASET={"noAMOVA":-1,"doAMOVA1":1,"doAMOVA3":3}
 
 rule all:
 	input:
-		expand("simulations/{simid}/model_{model_id}/contig_all/subsample_100K/ngsAMOVA_sfs_masked_var/dist{dist}/maxIter1e3/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}-tole{tole}-minInd{minInd}-dist{dist}.sfs.csv",
+		expand("simulations/{simid}/model_{model_id}/contig_{contig}/ngsAMOVA/windowEst/{simid}-{model_id}-{contig}-rep{rep}-d{depth}-win{winsize}MB-win{winid}-tole{tole}-{doamv}.sfs.csv",
+				depth=DEPTH,
 				simid=SIMULATION_ID,
-				model_id=MODEL,
 				contig=CONTIGID,
-				tole=TOLE,
-				minInd=[2],
 				rep=REP,
-				dist=[1],
-				depth=DEPTH),
-		# expand("simulations/{simid}/model_{model_id}/contig_all/subsample_100K/ngsAMOVA_sfs_masked_var/dist{dist}/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}-tole{tole}-minInd{minInd}-dist{dist}.sfs.csv",
+				model_id=MODEL,
+				winsize=[100,50],
+				winid=1,
+				tole=7,
+				doamv=["doAMOVA3"]),
+		# expand("simulations/{simid}/model_{model_id}/contig_all/masked_vcfgl_var/{simid}-{model_id}-contig_all-rep{rep}-d{depth}-tole{tole}-{doamv}.sfs.csv",
 				# simid=SIMULATION_ID,
 				# model_id=MODEL,
 				# contig=CONTIGID,
 				# tole=TOLE,
-				# minInd=[2],
 				# rep=REP,
-				# dist=[1],
-				# depth=DEPTH),
-		# expand("simulations/{simid}/model_{model_id}/contig_all/subsample_100K/ngsAMOVA_sfs_masked_var/dist{dist}/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}-tole{tole}-minInd{minInd}-dist{dist}.sfs.csv",
+				# depth=DEPTH,
+				# doamv=["doAMOVA1"]),
+		# expand("simulations/{simid}/model_{model_id}/contig_all/subsample_100K/ngsAmova/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}-i{it}-t1-{doamv}.sfs.csv",
 				# simid=SIMULATION_ID,
 				# model_id=MODEL,
 				# contig=CONTIGID,
 				# tole=TOLE,
-				# minInd=[2],
 				# rep=REP,
-				# dist=[1],
-				# depth=DEPTH),
-		# expand("simulations/{simid}/model_{model_id}/contig_all/subsample_100K/rawSFS/dist{dist}/{simid}-{model_id}-contig_all_100K-rep{rep}-dist{dist}.sfs.csv",
-				# simid=SIMULATION_ID,
-				# model_id=MODEL,
-				# rep=REP,
-				# dist=[2]),
-
+				# depth=DEPTH,
+				# doamv=["noAMOVA"],
+				# it=ITERSET),
 #
-# rule run_ngsAMOVA_sfs_var_minInd2_100K_maxIter1000:
+		# expand("simulations/{simid}/model_{model_id}/contig_all/subsample_100K/ngsAmova/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}-i{it}-t10-{doamv}.sfs.csv",
+				# simid=SIMULATION_ID,
+				# model_id=MODEL,
+				# contig=CONTIGID,
+				# tole=TOLE,
+				# rep=REP,
+				# depth=DEPTH,
+				# doamv=["noAMOVA"],
+				# it=ITERSET),
+#
+		# expand("simulations/{simid}/model_{model_id}/contig_all/subsample_100K/ngsAMOVA_est/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}-i{it}-t10-{doamv}.sfs.csv",
+				# simid=SIMULATION_ID,
+				# model_id=MODEL,
+				# contig=CONTIGID,
+				# tole=TOLE,
+				# rep=REP,
+				# depth=DEPTH,
+				# doamv=["noAMOVA"],
+				# it=ITERSET),
+#
+# rule benchmark_run_ngsAMOVA_sfs_var_minInd2_100K_maxIterSet:
 	# input:
 		# "simulations/{simid}/model_{model_id}/contig_all/subsample_100K/masked_vcfgl_var/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}.bcf",
 	# output:
-		# "simulations/{simid}/model_{model_id}/contig_all/subsample_100K/ngsAMOVA_sfs_masked_var/dist{dist}/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}-tole{tole}-minInd{minInd}-dist{dist}.sfs.csv",
+		# "simulations/{simid}/model_{model_id}/contig_all/subsample_100K/ngsAmova/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}-i{it}-t1-{doamv}.sfs.csv",
 	# params:
 		# ngsAMOVA=ngsAMOVA,
-		# outprefix="simulations/{simid}/model_{model_id}/contig_all/subsample_100K/ngsAMOVA_sfs_masked_var/dist{dist}/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}-tole{tole}-minInd{minInd}-dist{dist}",
-		# metadata="/maps/projects/lundbeck/scratch/pfs488/AMOVA/simulations/msprime/simulations/metadata_150inds.tsv",
+		# outprefix="simulations/{simid}/model_{model_id}/contig_all/subsample_100K/ngsAmova/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}-i{it}-t1-{doamv}",
+		# doAMOVA=lambda wildcards: AMOVASET[wildcards.doamv],
 	# log:
-		# "simulations/{simid}/logs/model_{model_id}/contig_all/subsample_100K/ngsAMOVA_sfs_masked_var/dist{dist}/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}-tole{tole}-minInd{minInd}-dist{dist}.sfs.csv",
+		# "simulations/{simid}/logs/model_{model_id}/contig_all/subsample_100K/ngsAmova/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}-i{it}-t1-{doamv}.sfs.csv",
+	# threads:
+		# 1
+	# benchmark:
+		# "simulations/{simid}/benchmark221010/model_{model_id}/contig_all/subsample_100K/ngsAmova/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}-i{it}-t1-{doamv}.sfs.csv"
 	# shell:
 		# """
-		# {params.ngsAMOVA} -in {input} -isSim 1 -tole 1e-{wildcards.tole} -minInd {wildcards.minInd} -P 5 -maxIter 1000 -out {params.outprefix} -doAMOVA 3 -doDist {wildcards.dist}  -m {params.metadata} 2> {log}
+		# {params.ngsAMOVA} -in {input} -isSim 1 -P {threads} -maxIter {wildcards.it} -out {params.outprefix} -doAMOVA {params.doAMOVA} -doDist 1  -minInd 2 2> {log}
 		# """
 #
-
-rule run_ngsAMOVA_sfs_var_minInd2_100K_doDist1_sqDist0_dij_maxIter1000:
-	input:
-		"simulations/{simid}/model_{model_id}/contig_all/subsample_100K/masked_vcfgl_var/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}.bcf",
-	output:
-		"simulations/{simid}/model_{model_id}/contig_all/subsample_100K/ngsAMOVA_sfs_masked_var/dist{dist}/maxIter1e3/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}-tole{tole}-minInd{minInd}-dist{dist}.sfs.csv",
-	params:
-		ngsAMOVA=ngsAMOVA,
-		outprefix="simulations/{simid}/model_{model_id}/contig_all/subsample_100K/ngsAMOVA_sfs_masked_var/dist{dist}/maxIter1e3/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}-tole{tole}-minInd{minInd}-dist{dist}",
-		metadata="/maps/projects/lundbeck/scratch/pfs488/AMOVA/simulations/msprime/simulations/metadata_150inds.tsv",
-	log:
-		"simulations/{simid}/logs/model_{model_id}/contig_all/subsample_100K/ngsAMOVA_sfs_masked_var/dist{dist}/maxIter1e3/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}-tole{tole}-minInd{minInd}-dist{dist}.sfs.csv",
-	shell:
-		"""
-		{params.ngsAMOVA} -in {input} -isSim 1 -tole 1e-{wildcards.tole} -minInd {wildcards.minInd} -P 5 -maxIter 1000 -out {params.outprefix} -doAMOVA 3 -doDist {wildcards.dist}  -sqDist 0 -m {params.metadata} 2> {log}
-		"""
-
-
-
-# #true GT SFS including all sites
-# rule run_ngsAMOVA_sfs_masked_var_trueSFS:
+#
+# rule benchmark_run_ngsAMOVA_sfs_var_minInd2_100K_maxIterSet_thread10:
 	# input:
-		# "simulations/{simid}/model_{model_id}/contig_all/subsample_100K/{simid}-{model_id}-contig_all_100K-rep{rep}.vcf",
+		# "simulations/{simid}/model_{model_id}/contig_all/subsample_100K/masked_vcfgl_var/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}.bcf",
 	# output:
-		# "simulations/{simid}/model_{model_id}/contig_all/subsample_100K/rawSFS/dist{dist}/{simid}-{model_id}-contig_all_100K-rep{rep}-dist{dist}.sfs.csv",
+		# "simulations/{simid}/model_{model_id}/contig_all/subsample_100K/ngsAmova/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}-i{it}-t10-{doamv}.sfs.csv",
 	# params:
 		# ngsAMOVA=ngsAMOVA,
-		# outprefix="simulations/{simid}/model_{model_id}/contig_all/subsample_100K/rawSFS/dist{dist}/{simid}-{model_id}-contig_all_100K-rep{rep}-dist{dist}",
-		# metadata="/maps/projects/lundbeck/scratch/pfs488/AMOVA/simulations/msprime/simulations/metadata_150inds.tsv",
+		# outprefix="simulations/{simid}/model_{model_id}/contig_all/subsample_100K/ngsAmova/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}-i{it}-t10-{doamv}",
+		# doAMOVA=lambda wildcards: AMOVASET[wildcards.doamv],
 	# log:
-		# "simulations/{simid}/logs/model_{model_id}/contig_all/subsample_100K/rawSFS/dist{dist}/{simid}-{model_id}-contig_all_100K-rep{rep}-dist{dist}.sfs.csv",
+		# "simulations/{simid}/logs/model_{model_id}/contig_all/subsample_100K/ngsAmova/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}-i{it}-t10-{doamv}.sfs.csv",
+	# threads:
+		# 10
+	# benchmark:
+		# "simulations/{simid}/benchmark221010/model_{model_id}/contig_all/subsample_100K/ngsAmova/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}-i{it}-t10-{doamv}.sfs.csv"
 	# shell:
 		# """
-		# {params.ngsAMOVA} -in {input} -isSim 1 -minInd 0 -out {params.outprefix} -doAMOVA 2 -doDist {wildcards.dist}  -m {params.metadata} 2> {log}
+		# {params.ngsAMOVA} -in {input} -isSim 1 -P {threads} -maxIter {wildcards.it} -out {params.outprefix} -doAMOVA {params.doAMOVA} -doDist 1  -minInd 2 2> {log}
 		# """
+#
+#
+# rule benchmark_run_ngsAMOVA_sfs_var_minInd2_100K_maxIterSet_thread10_getDelta:
+	# input:
+		# "simulations/{simid}/model_{model_id}/contig_all/subsample_100K/masked_vcfgl_var/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}.bcf",
+	# output:
+		# "simulations/{simid}/model_{model_id}/contig_all/subsample_100K/ngsAMOVA_est/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}-i{it}-t10-{doamv}.sfs.csv",
+	# params:
+		# ngsAMOVA=ngsAMOVA,
+		# outprefix="simulations/{simid}/model_{model_id}/contig_all/subsample_100K/ngsAMOVA_est/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}-i{it}-t10-{doamv}",
+		# doAMOVA=lambda wildcards: AMOVASET[wildcards.doamv],
+	# log:
+		# "simulations/{simid}/logs/model_{model_id}/contig_all/subsample_100K/ngsAMOVA_est/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}-i{it}-t10-{doamv}.sfs.csv",
+	# threads:
+		# 10
+	# benchmark:
+		# "simulations/{simid}/benchmark221016/model_{model_id}/contig_all/subsample_100K/ngsAMOVA_est/{simid}-{model_id}-contig_all_100K-rep{rep}-d{depth}-i{it}-t10-{doamv}.sfs.csv",
+	# shell:
+		# """
+		# {params.ngsAMOVA} -in {input} -isSim 1 -P {threads} -maxIter {wildcards.it} -out {params.outprefix} -doAMOVA {params.doAMOVA} -doDist 1  -minInd 2 2> {log}
+		# """
+#
+#
+#
+# rule run_ngsAMOVA_sfs_var_minInd2_contigAll_thread20:
+	# input:
+		# "simulations/{simid}/model_{model_id}/contig_all/masked_vcfgl_var/{simid}-{model_id}-contig_all-rep{rep}-d{depth}.bcf",
+	# output:
+		# "simulations/{simid}/model_{model_id}/contig_all/masked_vcfgl_var/{simid}-{model_id}-contig_all-rep{rep}-d{depth}-tole{tole}-{doamv}.sfs.csv",
+	# params:
+		# ngsAMOVA=ngsAMOVA,
+		# outprefix="simulations/{simid}/model_{model_id}/contig_all/masked_vcfgl_var/{simid}-{model_id}-contig_all-rep{rep}-d{depth}-tole{tole}-{doamv}",
+		# doAMOVA=lambda wildcards: AMOVASET[wildcards.doamv],
+		# metadata="/maps/projects/lundbeck/scratch/pfs488/AMOVA/simulations/msprime/simulations/metadata_150inds.tsv",
+	# log:
+		# "simulations/{simid}/logs/model_{model_id}/contig_all/masked_vcfgl_var/{simid}-{model_id}-contig_all-rep{rep}-d{depth}-tole{tole}-{doamv}.sfs.csv",
+	# threads:
+		# 20
+	# shell:
+		# """
+		# {params.ngsAMOVA} -in {input} -isSim 1 -P {threads} -maxIter 300 -out {params.outprefix} -doAMOVA {params.doAMOVA} -doDist 1  -minInd 2 -tole 1e-{wildcards.tole} -m {params.metadata} 2> {log}
+		# """
+#
+#
+# rule run_ngsAMOVA_sfs_var_minInd2_contigWindows_thread20:
+	# input:
+		# "simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/windowBcf/{simid}-{model_id}-{contig}-rep{rep}-d{depth}-win{winsize}MB_win{winid}.bcf",
+	# output:
+		# "simulations/{simid}/model_{model_id}/contig_{contig}/ngsAMOVA/windowBcf/{simid}-{model_id}-{contig}-rep{rep}-d{depth}-win{winsize}MB-win{winid}-tole{tole}-{doamv}.sfs.csv",
+	# params:
+		# ngsAMOVA=ngsAMOVA,
+		# outprefix="simulations/{simid}/model_{model_id}/contig_{contig}/ngsAMOVA/windowBcf/{simid}-{model_id}-{contig}-rep{rep}-d{depth}-win{winsize}MB-win{winid}-tole{tole}-{doamv}",
+		# doAMOVA=lambda wildcards: AMOVASET[wildcards.doamv],
+		# metadata="/maps/projects/lundbeck/scratch/pfs488/AMOVA/simulations/msprime/simulations/metadata_150inds.tsv",
+	# log:
+		# "simulations/{simid}/logs/model_{model_id}/contig_{contig}/ngsAMOVA/windowBcf/{simid}-{model_id}-{contig}-rep{rep}-d{depth}-win{winsize}MB-win{winid}-tole{tole}-{doamv}.sfs.csv",
+	# threads:
+		# 20
+	# shell:
+		# """
+		# {params.ngsAMOVA} -in {input} -isSim 1 -P {threads} -maxIter 300 -out {params.outprefix} -doAMOVA {params.doAMOVA} -doDist 1  -minInd 2 -tole 1e-{wildcards.tole} -m {params.metadata} 2> {log}
+		# """
+		# # {params.ngsAMOVA} -in {input} -isSim 1 -P {threads} -maxIter {wildcards.it} -out {params.outprefix} -doAMOVA {params.doAMOVA} -doDist 1  -minInd 2 -tole 1e-7 2> {log}
+#
+
+
+
+rule run_ngsAMOVA_perContigWindow:
+	input:
+		"simulations/{simid}/model_{model_id}/contig_{contig}/masked_vcfgl_var/windowBcf/{simid}-{model_id}-{contig}-rep{rep}-d{depth}-win{winsize}MB-win{winid}.bcf"
+	output:
+		"simulations/{simid}/model_{model_id}/contig_{contig}/ngsAMOVA/windowEst/{simid}-{model_id}-{contig}-rep{rep}-d{depth}-win{winsize}MB-win{winid}-tole{tole}-{doamv}.sfs.csv"
+	params:
+		ngsAMOVA=ngsAMOVA,
+		outprefix="simulations/{simid}/model_{model_id}/contig_{contig}/ngsAMOVA/windowEst/{simid}-{model_id}-{contig}-rep{rep}-d{depth}-win{winsize}MB-win{winid}-tole{tole}-{doamv}",
+		doAMOVA=lambda wildcards: AMOVASET[wildcards.doamv],
+		metadata="/maps/projects/lundbeck/scratch/pfs488/AMOVA/simulations/msprime/simulations/metadata_150inds.tsv",
+	log:
+		"simulations/{simid}/logs/model_{model_id}/contig_{contig}/ngsAMOVA/windowEst/{simid}-{model_id}-{contig}-rep{rep}-d{depth}-win{winsize}MB-win{winid}-tole{tole}-{doamv}.sfs.csv"
+	threads:
+		20
+	shell:
+		"""
+		{params.ngsAMOVA} -in {input} -isSim 1 -P {threads} -maxIter 300 -out {params.outprefix} -doAMOVA {params.doAMOVA} -doDist 1  -minInd 2 -tole 1e-{wildcards.tole} -m {params.metadata} 2> {log}
+		"""
+
+
+
+
+

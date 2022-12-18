@@ -106,6 +106,8 @@ MODELS=["model1","model2"]
 
 rule all:
 	input:
+	
+	
 		expand("simulations/{simid}/model_{model_id}/contig_{contig}/doAmova2/called_gt/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.amova.csv",
 				simid=SIMULATION_ID,
 				model_id=MODELS,
@@ -682,3 +684,74 @@ rule run_ngsAMOVA_sfs_var_rawgt:
 
 
 ##TODO collect their results
+rule collect_results_4:
+	input:
+		#221214 tole10 + tole5
+		expand("simulations/{simid}/model_{model_id}/contig_{contig}/doAmova2/called_gt/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.amova.csv",
+				simid=SIMULATION_ID,
+				model_id=MODELS,
+				contig=CONTIGS,
+				depth=DEPTH,
+				rep=REP),
+	output:
+		"simulations/sim_demes_v2/collected_results/sim_demes_v2_doAmova2_called_gt_amova.csv"
+	run:
+		rows = []
+		with open(output[0], "w") as outfile:
+			header = ['method','df_AG', 'ssd_AG', 'msd_AG', 'df_AIWG', 'ssd_AIWG', 'msd_AIWG', 'df_TOTAL', 'ssd_TOTAL', 'msd_TOTAL', 'coef_n', 'sigmasq_a', 'sigmasq_b', 'phi_a','fid', 'simid', 'model', 'contig', 'rep', 'depth']
+			writer = csv.writer(outfile)
+			writer.writerow(header)
+			for fi in input:
+
+				with open(fi, "r") as infile:
+					reader = csv.reader(infile)
+					filename = fi.split('/')[-1]
+					simid = filename.split('-')[0]
+					model_id = filename.split('-')[1]
+					contig = filename.split('-')[2]
+					rep = filename.split('-')[3].split('rep')[1]
+					depth = filename.split('-')[4].split('d')[1]
+
+					for row in reader:
+						row.append(fi)
+						row.append(simid)
+						row.append(model_id)
+						row.append(contig)
+						row.append(rep)
+						row.append(depth)
+						writer.writerow(row)
+
+
+rule collect_results_5:
+	input:
+		#221214 tole10 + tole5
+		expand("simulations/{simid}/model_{model_id}/contig_{contig}/truth_raw_all/{simid}-{model_id}-{contig}-rep{rep}.sfs.csv",
+				simid=SIMULATION_ID,
+				model_id=MODELS,
+				contig=CONTIGS,
+				rep=REP),
+	output:
+		"simulations/sim_demes_v2/collected_results/sim_demes_v2_truth_raw_all_amova.csv"
+	run:
+		rows = []
+		with open(output[0], "w") as outfile:
+			header = ['method','df_AG', 'ssd_AG', 'msd_AG', 'df_AIWG', 'ssd_AIWG', 'msd_AIWG', 'df_TOTAL', 'ssd_TOTAL', 'msd_TOTAL', 'coef_n', 'sigmasq_a', 'sigmasq_b', 'phi_a','fid', 'simid', 'model', 'contig', 'rep']
+			writer = csv.writer(outfile)
+			writer.writerow(header)
+			for fi in input:
+
+				with open(fi, "r") as infile:
+					reader = csv.reader(infile)
+					filename = fi.split('/')[-1]
+					simid = filename.split('-')[0]
+					model_id = filename.split('-')[1]
+					contig = filename.split('-')[2]
+					rep = filename.split('-')[3].split('rep')[1]
+
+					for row in reader:
+						row.append(fi)
+						row.append(simid)
+						row.append(model_id)
+						row.append(contig)
+						row.append(rep)
+						writer.writerow(row)

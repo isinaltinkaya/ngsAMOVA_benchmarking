@@ -101,11 +101,33 @@ CONTIGS=[1,2,10,50,100]
 
 
 
+# ITERLIST=list(range(1,500))
+if(int(config['iter'])==1):
+	ITERLIST=list(range(1,300))
+elif(int(config['iter'])==2):
+	ITERLIST=list(range(300,501))
+else:
+	exit(1)
+
+print(ITERLIST)
+	
+
+
 MODELS=["model1","model2"]
 
 
 rule all:
 	input:
+### per iter amova results
+		expand("simulations/{simid}/model_{model_id}/contig_{contig}/perIterAmova/doAmova3_gl_gt/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_iter{iteration}.amova.csv",
+				simid=SIMULATION_ID,
+				model_id=MODELS,
+				contig=CONTIGS,
+				iteration=ITERLIST,
+				# it=list(range(1,500)),
+				depth=DEPTH,
+				rep=REP),
+
 		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/doAmova2/called_gt/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.amova.csv",
 				# simid=SIMULATION_ID,
 				# model_id=MODELS,
@@ -203,11 +225,10 @@ rule all:
 				# nthr=THRSET,
 				# rep=REP),
 
-
 ###############################################################################
 ### Simulation
 
-#
+
 # rule generate_reference:
 	# output:
 		# "simulations/{simid}/resources/{contig}.fa"
@@ -438,7 +459,7 @@ rule all:
 		# # {ngsAMOVA} -in {input.bcf} -isSim 1 -P {threads} -mEmIter 500 -out {params.outprefix} -tole 1e-{wildcards.tole} -doAMOVA 3 -doDist 1 -m {input.metadata} > {output.iterlog}
 		# # )  2> {log}
 		# # """
-#
+
 #
 # rule run_ngsAMOVA_sfs_var_gtgl_forAmovaResults_v2:
 	# input:
@@ -458,8 +479,8 @@ rule all:
 		# {ngsAMOVA} -in {input.bcf} -isSim 1 -P {threads} -mEmIter 500 -out {params.outprefix} -tole 1e-{wildcards.tole} -doAMOVA 3 -doDist 1 -m {input.metadata} -printMatrix 1  -sqDist 1
 		# )  2> {log}
 		# """
-#
-# #
+
+
 # # rule run_ngsAMOVA_sfs_var_gtgl_forAmovaResults_v3:
 	# # input:
 		# # bcf="simulations/{simid}/model_{model_id}/contig_{contig}/vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf",
@@ -479,7 +500,26 @@ rule all:
 		# # {ngsAMOVA} -in {input.bcf} -isSim 1 -P {threads} -mEmIter 500 -out {params.outprefix} -tole 1e-{wildcards.tole} -doAMOVA 3 -doDist 1 -m {input.metadata} -printMatrix 0  -sqDist 1 > {output.iterlog}
 		# # )  2> {log}
 		# # """
-#
+
+
+rule run_ngsAMOVA_sfs_var_gtgl_forAmovaResults_perIter:
+	input:
+		bcf="simulations/{simid}/model_{model_id}/contig_{contig}/vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf",
+		metadata="simulations/{simid}/model_{model_id}/{simid}_{model_id}_metadata.tsv",
+	output:
+		amv="simulations/{simid}/model_{model_id}/contig_{contig}/perIterAmova/doAmova3_gl_gt/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_iter{iteration}.amova.csv",
+	params:
+		outprefix="simulations/{simid}/model_{model_id}/contig_{contig}/perIterAmova/doAmova3_gl_gt/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_iter{iteration}",
+	threads:
+		1
+	log:
+		"simulations/{simid}/logs/model_{model_id}/contig_{contig}/perIterAmova/doAmova3_gl_gt/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_iter{iteration}.amova.csv",
+	shell:
+		"""
+		(
+		{ngsAMOVA} -in {input.bcf} -isSim 1 -P {threads} -mEmIter {iteration} -out {params.outprefix} -tole 1e-10 -doAMOVA 3 -doDist 1 -m {input.metadata} -printMatrix 1  -sqDist 1
+		)  2> {log}
+		"""
 
 
 
@@ -505,7 +545,7 @@ rule all:
 		# """
 #
 # # run after disabling printing iterlog, set tole to 5
-#
+
 
 
 
@@ -707,7 +747,7 @@ rule collect_results_4:
 					model_id = filename.split('-')[1]
 					contig = filename.split('-')[2]
 					rep = filename.split('-')[3].split('rep')[1]
-					depth = filename.split('.')[0].split('-')[4].split('d')[1]
+					depth = filename.split('.amova.csv')[0].split('-')[4].split('d')[1]
 
 					for row in reader:
 						row.append(fi)
@@ -781,7 +821,8 @@ rule collect_results_6:
 					contig = filename.split('-')[2]
 					rep = filename.split('-')[3].split('rep')[1]
 					# depth = filename.split('-')[4].split('d')[1]
-					depth = filename.split('.')[0].split('-')[4].split('d')[1]
+					depth = filename.split('.sfs.csv')[0].split('-')[4].split('d')[1]
+					# print(depth)
 
 					for row in reader:
 						row.append(fi)
@@ -827,4 +868,48 @@ rule collect_results_7:
 						row.append(contig)
 						row.append(rep)
 						writer.writerow(row)
+
+
+
+
+rule collect_results_8:
+	input:
+		expand("simulations/{simid}/model_{model_id}/contig_{contig}/doAmova3/gl_gt/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_tole{tole}.sfs.csv",
+				simid=SIMULATION_ID,
+				model_id=MODELS,
+				contig=CONTIGS,
+				depth=DEPTH,
+				tole=[10,5],
+				rep=REP),
+	output:
+		"simulations/sim_demes_v2/collected_results/sim_demes_v2_doAmova3_gl_gt_sfs.csv"
+	run:
+		rows = []
+		with open(output[0], "w") as outfile:
+			header=[ 'Method',    'Ind1',    'Ind2',    'A',    'D',    'G',    'B',    'E',    'H',    'C',    'F',    'I',    'n_em_iter',    'shared_nSites',    'Delta',    'Tole',    'Sij',    'Fij',    'Fij2',    'IBS0',    'IBS1',    'IBS2',    'R0',    'R1',    'Kin', 'fid', 'simid', 'model', 'contig', 'rep', 'depth', 'tole']
+			writer = csv.writer(outfile)
+			writer.writerow(header)
+			for fi in input:
+
+				with open(fi, "r") as infile:
+					reader = csv.reader(infile)
+					next(reader)
+					filename = fi.split('/')[-1]
+					simid = filename.split('-')[0]
+					model_id = filename.split('-')[1]
+					contig = filename.split('-')[2]
+					rep = filename.split('-')[3].split('rep')[1]
+					depth = filename.split('_')[2].split('-')[4].split('d')[1]
+					tole = filename.split('_')[3].split('-')[0].split('tole')[1].split('.')[0]
+
+					for row in reader:
+						row.append(fi)
+						row.append(simid)
+						row.append(model_id)
+						row.append(contig)
+						row.append(rep)
+						row.append(depth)
+						row.append(tole)
+						writer.writerow(row)
+
 

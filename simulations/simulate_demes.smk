@@ -19,28 +19,24 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-###################################################
-# CONFIG
-
+###############################################################################
+# BEGIN CONFIG
+###############################################################################
 
 vcfgl="/maps/projects/lundbeck/scratch/pfs488/AMOVA/runv_vcfgl/vcfgl/vcfgl"
 ngsAMOVA="/maps/projects/lundbeck/scratch/pfs488/AMOVA/runv_ngsAMOVA/ngsAMOVA"
 
 SIMULATION_ID="sim_demes_v2"
 
-
-###################################################
+###############################################################################
 # DEPTH 
-
 # average per site depth
-# DEPTH=[100,20,10,5,2,1,0.5,0.2,0.1,0.01]
 # DEPTH=[20,10,5,2,1,0.5,0.2,0.1,0.01]
 # DEPTH=[20,10,5,2,1,0.5,0.2,0.1]
 DEPTH=[10,5,2,1,0.5,0.2,0.1]
 
-###################################################
 
-
+###############################################################################
 # Number of replicates
 n_reps=200
 REP=[*range(n_reps)]
@@ -48,7 +44,7 @@ REP=REP[:20]
 
 
 
-###################################################
+###############################################################################
 # define populations
 #
 ploidy=2
@@ -84,12 +80,8 @@ IND_PAIRS=list("-".join(map(str,comb)) for comb in combinations(indv_names,2))
 mutation_rate=1.29e-08
 recombination_rate=1.14856e-08
 
-# END CONFIG
-###################################################
-
-
+# max number of iterations for EM algorithm
 MAXIT=[500]
-
 
 AMOVASET={"noAMOVA":-1}
 
@@ -100,9 +92,14 @@ CONTIGS=[1,2,10,50,100]
 MODELS=["model1","model2"]
 
 
+###############################################################################
+# END CONFIG
+###############################################################################
+
 
 rule all:
 	input:
+		"simulations/"+SIMULATION_ID+"/model_all/distanceMatrixList_amovaResultsList.txt",
 		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/perIterationDist/distanceMatrices/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_tole{tole}_emIter{it}.distance_matrix.csv",
 				# simid=SIMULATION_ID,
 				# model_id=MODELS,
@@ -222,6 +219,7 @@ rule all:
 				# doamv=["noAMOVA"],
 				# nthr=THRSET,
 				# rep=REP),
+
 
 
 
@@ -872,8 +870,21 @@ rule all:
 
 
 
-# columns in output:
-# pair_index,n_em_iter,sq_dij,log10_d
+
+
+###############################################################################
+# PER ITERATION DISTANCE MATRIX
+###############################################################################
+
+
+###############################################################################
+# print per iteration distance matrices
+# input: bcf file, metadata file
+# output: per iteration distance matrix
+# 	for all pairs of individuals and all iterations
+# 
+# 	columns in output:
+# 	pair_index,n_em_iter,sq_dij,log10_d
 rule run_printPerIterDistanceMatrix_devmode_stdout:
 	input:
 		bcf="simulations/{simid}/model_{model_id}/contig_{contig}/vcfgl_var/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf",
@@ -889,7 +900,10 @@ rule run_printPerIterDistanceMatrix_devmode_stdout:
 		( {ngsAMOVA} -in {input.bcf} -doEM 1 -isSim 1 -P 1 -maxIter 500  -out {params.outprefix} -doAMOVA 1 -doDist 1 -printMatrix 0 -tole 1e-{wildcards.tole} -dev 1 -m {input.metadata} > {output} ) 2> {log}
 		"""
 
-
+###############################################################################
+# collect per iteration distance matrix
+# input: per iteration distance matrix
+# output: distance matrix for each iteration
 rule collect_run_printPerIterDistanceMatrix_devmode_stdout:
 	input:
 		"simulations/{simid}/model_{model_id}/contig_{contig}/perIterationDist/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_tole{tole}.perIterDistances.csv"
@@ -911,18 +925,30 @@ rule collect_run_printPerIterDistanceMatrix_devmode_stdout:
 
 		"""
 
-#
-# rule transform_data_to_distanceMatrix:
-	# output:
-		# "simulations/"+SIMULATION_ID+"model_all/distanceMatrixList.txt"
-	# shell:
-		# """
-		# bash transform_data_to_distanceMatrix.sh > {output}
-		# """
-#
-# def read_distanceMatrix_list():
-	# with open("simulations/"+SIMULATION_ID+"model_all/distanceMatrixList.txt") as f:
-		# samples = [sample for sample in f.read().split('\n') if len(sample) > 0]
-		# return samples
-#
-# read_distanceMatrix_list()
+################################################################################
+# transform per iteration distance matrix to distance matrix input for ngsAMOVA
+# input: distance matrix for each iteration
+# script output: distance matrix input to be used by ngsAMOVA
+# snakemake output: list of distance matrices
+rule transform_data_to_distanceMatrix:
+	output:
+		"simulations/"+SIMULATION_ID+"/model_all/distanceMatrixList.txt"
+	shell:
+		"""
+		bash transform_data_to_distanceMatrix.sh > {output}
+		"""
+	
+###############################################################################
+# use distance matrices with ngsAMOVA to get AMOVA results for each iteration
+run_ngsAMOVA_perIterationDistList="/maps/projects/lundbeck/scratch/pfs488/AMOVA/simulations/AMOVA_paper_analyses/scripts/run_ngsAMOVA_perIterationDistList.sh"
+rule run_ngsAMOVA_with_distanceMatrix:
+	input:
+		"simulations/"+SIMULATION_ID+"/model_all/distanceMatrixList.txt",
+	output:
+		"simulations/"+SIMULATION_ID+"/model_all/distanceMatrixList_amovaResultsList.txt",
+	log:
+		"simulations/"+SIMULATION_ID+"/logs/model_all/distanceMatrixList_amovaResultsList.txt",
+	shell:
+		"""
+		( bash {run_ngsAMOVA_perIterationDistList} {input} {output} ) 2> {log}
+		"""

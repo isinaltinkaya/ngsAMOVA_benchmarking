@@ -97,28 +97,56 @@ MODELS=["model1","model2"]
 
 
 
+#remove called_gt files
 rule all:
 	input:
+		expand("simulations/{simid}/model_{model_id}/contig_{contig}/call_genotype/stats/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_nSites.txt",
+			simid=SIMULATION_ID,
+			model_id=MODELS,
+			contig=CONTIGS,
+			depth=DEPTH,
+			rep=REP),
+		expand("simulations/{simid}/model_{model_id}/contig_{contig}/call_genotype/stats/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_avgNIndPerSite.txt",
+			simid=SIMULATION_ID,
+			model_id=MODELS,
+			contig=CONTIGS,
+			depth=DEPTH,
+			rep=REP),
 ###############################################################################
-# call genotypes
-		expand("simulations/{simid}/model_{model_id}/contig_{contig}/vcfgl_var/rmGT/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_rmGT.bcf",
+# call genotypes and run ngsAMOVA
+		expand("simulations/{simid}/model_{model_id}/contig_{contig}/call_genotype/doAMOVA2_2level/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.amova.csv",
 			simid=SIMULATION_ID,
 			model_id=MODELS,
 			contig=CONTIGS,
 			depth=DEPTH,
 			rep=REP),
-		expand("simulations/{simid}/model_{model_id}/contig_{contig}/call_genotype/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.geno.gz",
-			simid=SIMULATION_ID,
-			model_id=MODELS,
-			contig=CONTIGS,
-			depth=DEPTH,
-			rep=REP),
-		expand("simulations/{simid}/model_{model_id}/contig_{contig}/vcfgl_var/vcf_stats/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.stats",
-			simid=SIMULATION_ID,
-			model_id=MODELS,
-			contig=CONTIGS,
-			depth=DEPTH,
-			rep=REP),
+		"simulations/sim_demes_v2/collected_results/collect_feb23/sim_demes_v2_doAmova2_calledGt_amova_varianceComponent.csv",
+		"simulations/sim_demes_v2/collected_results/collect_feb23/sim_demes_v2_doAmova2_calledGt_amova_phi.csv",
+		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/doAmova2/called_gt/doAmova2_2level/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.amova.csv",
+		# 	simid=SIMULATION_ID,
+		# 	model_id=MODELS,
+		# 	contig=CONTIGS,
+		# 	depth=DEPTH,
+		# 	rep=REP),
+		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/vcfgl_var/rmGT/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_rmGT.bcf",
+		# 	simid=SIMULATION_ID,
+		# 	model_id=MODELS,
+		# 	contig=CONTIGS,
+		# 	depth=DEPTH,
+		# 	rep=REP),
+		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/call_genotype/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.geno.gz",
+		# 	simid=SIMULATION_ID,
+		# 	model_id=MODELS,
+		# 	contig=CONTIGS,
+		# 	depth=DEPTH,
+		# 	rep=REP),
+###############################################################################
+		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/vcfgl_var/vcf_stats/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.stats",
+		# 	simid=SIMULATION_ID,
+		# 	model_id=MODELS,
+		# 	contig=CONTIGS,
+		# 	depth=DEPTH,
+		# 	rep=REP),
 		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/ngsAMOVA_window_gle/{simid}-{model_id}-{contig}-rep{rep}-d{depth}-winSize{ws}_{{winid}}.amova.csv",
 			# simid=SIMULATION_ID,
 			# model_id=MODELS,
@@ -126,13 +154,13 @@ rule all:
 			# depth=DEPTH,
 			# rep=REP,
 			# win=[5,6,7]),
-		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/vcfgl_var/windowed/{simid}-{model_id}-{contig}-rep{rep}-d{depth}-winSize{ws}_0.bcf",
-			# simid=SIMULATION_ID,
-			# model_id=MODELS,
-			# contig=100,
-			# depth=DEPTH,
-			# rep=REP,
-			# win=[5,6,7]),
+		expand("simulations/{simid}/model_{model_id}/contig_{contig}/vcfgl_var/windowed/{simid}-{model_id}-{contig}-rep{rep}-d{depth}-winSize{ws}_0.bcf",
+			simid=SIMULATION_ID,
+			model_id=MODELS,
+			contig=100,
+			depth=DEPTH,
+			rep=REP,
+			ws=[5,6,7]),
 		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/gle_doAmova1/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_tole{tole}.amova.csv",
 		# 	simid=SIMULATION_ID,
 		# 	model_id=MODELS,
@@ -380,6 +408,7 @@ rule get_vcfStats_ofvcfgl:
 ###############################################################################
 ### Genotype calling
 
+
 # generate angsd sites input for each contig to define major and minor alleles
 rule generate_sites_contig:
 	output:
@@ -388,7 +417,7 @@ rule generate_sites_contig:
 		contig_length=lambda wildcards: int(int(wildcards.contig)*1e6)
 	shell:
 		"""
-		awk -v X={wildcards.contig} -v XN={params.contig_length} 'BEGIN{{for(c=1;c<XN;c++) printf "%s\\t%d\\tA\\tC\\n",X,c}}' > {output}
+		awk -v X={wildcards.contig} -v XN={params.contig_length} 'BEGIN{{for(c=1;c<XN;c++) printf "%s\\t%d\\tA\\tC\\n",X,c}}' > {output};
 		{ANGSD} sites index {output}
 		"""
 
@@ -403,7 +432,8 @@ rule remove_simulatedGTs_before_genotypeCalling:
 		"""
 
 
-################################################################################
+
+###############################################################################
 # ./angsd
 # -doMajorMinor 3 # Use pre-specified major and minor
 # -sites sites.txt
@@ -411,28 +441,48 @@ rule remove_simulatedGTs_before_genotypeCalling:
 # -doGeno 31 # 1 + 2 + 4 + 8 + 16 [below]
 # -doPost 1 # Estimate the posterior genotype probability based on allele frequency as prior
 # -vcf-gl {input.vcf}
-################################################################################
+###############################################################################
 ## doGeno
 # 1: print out major minor
 # 2: print the called genotype as -1,0,1,2 (count of minor)
 # 4: print the called genotype as AA, AC, AG, ...
 # 8: print all 3 posts (major,major),(major,minor),(minor,minor)
 # 16: print the posterior of the called genotype
-################################################################################
-# call genotypes from vcf genotype likelihoods using ANGSD
+###############################################################################
 rule angsd_call_genotypes:
 	input:
-		bcf="simulations/{simid}/model_{model_id}/contig_{contig}/vcfgl_var/rmGT/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_rmGT.bcf",
+		vcf="simulations/{simid}/model_{model_id}/contig_{contig}/vcfgl_var/rmGT/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_rmGT.bcf",
 		sites="simulations/{simid}/resources/{contig}.sites"
 	output:
 		"simulations/{simid}/model_{model_id}/contig_{contig}/call_genotype/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.geno.gz"
+	log:
+		"simulations/{simid}/logs/model_{model_id}/contig_{contig}/call_genotype/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.geno.gz"
 	params:
 		prefix="simulations/{simid}/model_{model_id}/contig_{contig}/call_genotype/{simid}-{model_id}-{contig}-rep{rep}-d{depth}"
 	shell:
 		"""
-		{ANGSD} -doMajorMinor 3 -doMaf 1 -doGeno 31 -doPost 1 -vcf-gl {input.bcf} -sites {input.sites} -o {params.prefix}
+		({ANGSD} -doMajorMinor 3 -doMaf 1 -doGeno 31 -doPost 1 -vcf-gl {input.vcf} -sites {input.sites} -out {params.prefix} -doBcf 1 )2>{log}
 		"""
 
+rule get_genotypeCalling_nSites:
+	input:
+		"simulations/{simid}/model_{model_id}/contig_{contig}/call_genotype/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.mafs.gz"
+	output:
+		"simulations/{simid}/model_{model_id}/contig_{contig}/call_genotype/stats/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_nSites.txt"
+	shell:
+		"""
+		zcat {input} | awk 'END{{print NR-1}}' > {output}
+		"""
+
+rule get_genotypeCalling_avgNIndPerSite:
+	input:
+		"simulations/{simid}/model_{model_id}/contig_{contig}/call_genotype/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.mafs.gz"
+	output:
+		"simulations/{simid}/model_{model_id}/contig_{contig}/call_genotype/stats/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_avgNIndPerSite.txt"
+	shell:
+		"""
+		zcat {input} |  datamash mean --header-in nInd > {output}
+		"""
 ###############################################################################
 ###############################################################################
 ###############################################################################
@@ -689,30 +739,6 @@ rule benchmark_run_ngsAMOVA_sfs_var_maxIterSet_printLike:
 # 						row.append(tole)
 # 						writer.writerow(row)
 
-
-
-# ################################################################################
-# # run ngsAMOVA with bcf files containing called genotypes
-# #
-# #221217
-# rule run_ngsAMOVA_sfs_var_calledgt:
-# 	input:
-# 		bcf="simulations/{simid}/model_{model_id}/contig_{contig}/call_genotype/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf",
-# 		metadata="simulations/{simid}/model_{model_id}/{simid}_{model_id}_metadata.tsv",
-# 	output:
-# 		"simulations/{simid}/model_{model_id}/contig_{contig}/doAmova2/called_gt/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.amova.csv",
-# 	params:
-# 		outprefix="simulations/{simid}/model_{model_id}/contig_{contig}/doAmova2/called_gt/{simid}-{model_id}-{contig}-rep{rep}-d{depth}",
-# 	threads:
-# 		1
-# 	log:
-# 		"simulations/{simid}/logs/model_{model_id}/contig_{contig}/doAmova2/called_gt/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.amova.csv",
-# 	shell:
-# 		"""
-# 		(
-# 		{ngsAMOVA} -in {input.bcf} -isSim 0 -P {threads} -out {params.outprefix} -doAMOVA 2 -doDist 1 -m {input.metadata} -printMatrix 0  -sqDist 1
-# 		)  2> {log}
-# 		"""
 
 
 
@@ -1082,23 +1108,23 @@ rule run_ngsAMOVA_gle_2level:
 ################################################################################
 # run 2 level AMOVA with bcf files containing called genotypes 
 #
-# 230203
+# 230206
 rule run_ngsAMOVA_sfs_var_calledgt_2level:
 	input:
 		bcf="simulations/{simid}/model_{model_id}/contig_{contig}/call_genotype/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.bcf",
 		metadata="/maps/projects/lundbeck/scratch/pfs488/AMOVA/simulations/msprime/simulations/sim_demes_v2/metadata_2lvl_with_header.tsv",
 	output:
-		"simulations/{simid}/model_{model_id}/contig_{contig}/doAmova2/called_gt/doAmova2_2level/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.amova.csv",
+		"simulations/{simid}/model_{model_id}/contig_{contig}/call_genotype/doAMOVA2_2level/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.amova.csv",
 	params:
-		outprefix="simulations/{simid}/model_{model_id}/contig_{contig}/doAmova2/called_gt/doAmova2_2level/{simid}-{model_id}-{contig}-rep{rep}-d{depth}",
+		outprefix="simulations/{simid}/model_{model_id}/contig_{contig}/call_genotype/doAMOVA2_2level/{simid}-{model_id}-{contig}-rep{rep}-d{depth}",
 	threads:
 		1
 	log:
-		"simulations/{simid}/logs/model_{model_id}/contig_{contig}/doAmova2/called_gt/doAmova2_2level/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.amova.csv",
+		"simulations/{simid}/logs/model_{model_id}/contig_{contig}/call_genotype/doAMOVA2_2level/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.amova.csv",
 	shell:
 		"""
 		(
-		{ngsAMOVA} -in {input.bcf} -P {threads} -out {params.outprefix} -doAMOVA 2 -doDist 1 -m {input.metadata} -printMatrix 2 -sqDist 1
+		{ngsAMOVA} -in {input.bcf} -P {threads} -out {params.outprefix} -doAMOVA 2 -doDist 1 -m {input.metadata} -printMatrix 2 -sqDist 1 -pJGCD 1
 		)  2> {log}
 		"""
 
@@ -1159,7 +1185,7 @@ rule collect_results_rawtruth_230204:
 ################################################################################
 # collect called genotype results
 # 230206
-rule collect_results_calledgt_230204:
+rule collect_results_calledgt_230206:
 	input:
 		expand("simulations/{simid}/model_{model_id}/contig_{contig}/doAmova2/called_gt/doAmova2_2level/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.amova.csv",
 				simid=SIMULATION_ID,
@@ -1286,6 +1312,8 @@ rule run_ngsAMOVA_gle_windowed_contig100:
 		{ngsAMOVA} -in {input.bcf} -P {threads} -out {params.outprefix} -doAMOVA 1 -doEM 1 -doDist 1 -maxIter 500 -tole 1e-5 -m {input.metadata} -printMatrix 2 -sqDist 1
 		)  2> {log}
 		"""
+
+
 
 
 

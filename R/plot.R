@@ -142,3 +142,27 @@ gle_vc$Depth <- as.factor(gle_vc$Depth)
 # HEATMAP
 
 # Coefficicient of variation (CV)
+
+
+
+
+
+
+
+
+
+
+
+ninds<-"/home/isin/Mount/AMOVA/simulations/msprime/simulations/sim_demes_v2/collected_results/collect_feb23/sim_demes_v2_doAmova2_calledGt_avgNIndPerSite.txt"
+nis<-read.csv(ninds,header=T)
+nis$Model<-as.factor(nis$Model)
+nis$Contig<-as.factor(nis$Contig)
+nis$Rep<-as.factor(nis$Rep)
+nis$Depth<-as.factor(nis$Depth)
+
+nsites<-"/home/isin/Mount/AMOVA/simulations/msprime/simulations/sim_demes_v2/collected_results/collect_feb23/sim_demes_v2_doAmova2_calledGt_nSites.txt"
+nsts<- read.csv(nsites,header=T)
+nsts$Model<-as.factor(nsts$Model)
+nsts$Contig<-as.factor(nsts$Contig)
+nsts$Rep<-as.factor(nsts$Rep)
+nsts$Depth<-as.factor(nsts$Depth)

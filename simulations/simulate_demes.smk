@@ -93,9 +93,25 @@ MODELS=["model1","model2"]
 
 rule all:
 	input:
+		# 230221 collect nSites etc stats to assert eq to prev ones with doPost1
+		# assert: done; OK
+		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/call_genotype/stats/doPost2/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_nSites.txt",
+			# simid=SIMULATION_ID,
+			# model_id=MODELS,
+			# contig=CONTIGS,
+			# depth=DEPTH,
+			# rep=REP),
+		# expand("simulations/{simid}/model_{model_id}/contig_{contig}/call_genotype/stats/doPost2/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_avgNIndPerSite.txt",
+			# simid=SIMULATION_ID,
+			# model_id=MODELS,
+			# contig=CONTIGS,
+			# depth=DEPTH,
+			# rep=REP),
+		# "simulations/sim_demes_v2/collected_results/collect_feb23/collect230221/sim_demes_v2_doAmova2_call_genotype_nSites.txt",
+		# "simulations/sim_demes_v2/collected_results/collect_feb23/collect230221/sim_demes_v2_doAmova2_call_genotype_avgNIndPerSite.txt",
 		# # 230221 collect gt
-		# "simulations/sim_demes_v2/collected_results/collect_feb23/collect230221/sim_demes_v2_genotype_call_vc_doPost1.csv",
-		# "simulations/sim_demes_v2/collected_results/collect_feb23/collect230221/sim_demes_v2_genotype_call_phi_doPost1.csv",
+		"simulations/sim_demes_v2/collected_results/collect_feb23/collect230221/sim_demes_v2_genotype_call_vc_doPost1.csv",
+		"simulations/sim_demes_v2/collected_results/collect_feb23/collect230221/sim_demes_v2_genotype_call_phi_doPost1.csv",
 		# "simulations/sim_demes_v2/collected_results/collect_feb23/collect230221/sim_demes_v2_genotype_call_vc_doPost2.csv",
 		# "simulations/sim_demes_v2/collected_results/collect_feb23/collect230221/sim_demes_v2_genotype_call_phi_doPost2.csv",
 #
@@ -105,8 +121,8 @@ rule all:
 		# "simulations/sim_demes_v2/collected_results/collect_feb23/collect230221/sim_demes_v2_doAmova1_gle_tole5_amova_phi.csv",
 # #
 		# # 230221 collect raw truth
-		"simulations/sim_demes_v2/collected_results/collect_feb23/collect230221/sim_demes_v2_truth_amova_vc.csv",
-		"simulations/sim_demes_v2/collected_results/collect_feb23/collect230221/sim_demes_v2_truth_amova_phi.csv",
+		# "simulations/sim_demes_v2/collected_results/collect_feb23/collect230221/sim_demes_v2_truth_amova_vc.csv",
+		# "simulations/sim_demes_v2/collected_results/collect_feb23/collect230221/sim_demes_v2_truth_amova_phi.csv",
 #
 #
 
@@ -1268,7 +1284,7 @@ collect_results_genotype_call_phi="/maps/projects/lundbeck/scratch/pfs488/AMOVA/
 
 rule collect_results_genotype_call_doPost1_230221:
 	input:
-		expand("simulations/{simid}/model_{model_id}/contig_{contig}/call_genotype/doPost2/doAMOVA2_2level/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.amova.csv",
+		expand("simulations/{simid}/model_{model_id}/contig_{contig}/call_genotype/doAMOVA2_2level/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.amova.csv",
 				simid=SIMULATION_ID,
 				model_id=MODELS,
 				contig=CONTIGS,
@@ -1352,6 +1368,84 @@ rule collect_results_truth_230221:
 		bash {collect_results_truth_phi} {input} > {output.phi}
 		"""
 
+
+# ################################################################################
+# 230221
+#
+#TODO assert eq to dopost 1 nsites etc
+rule get_genotype_calling_nSites_230221:
+	input:
+		"simulations/{simid}/model_{model_id}/contig_{contig}/call_genotype/doPost2/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.mafs.gz"
+	output:
+		"simulations/{simid}/model_{model_id}/contig_{contig}/call_genotype/stats/doPost2/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_nSites.txt"
+	shell:
+		"""
+		zcat {input} | awk 'END{{print NR-1}}' > {output}
+		"""
+
+rule get_genotypeCalling_avgNIndPerSite_230221:
+	input:
+		"simulations/{simid}/model_{model_id}/contig_{contig}/call_genotype/doPost2/{simid}-{model_id}-{contig}-rep{rep}-d{depth}.mafs.gz"
+	output:
+		"simulations/{simid}/model_{model_id}/contig_{contig}/call_genotype/stats/doPost2/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_avgNIndPerSite.txt"
+	shell:
+		"""
+		zcat {input} |  datamash mean --header-in nInd > {output}
+		"""
+
+rule collect_nsites_230221:
+	input:
+		expand("simulations/{simid}/model_{model_id}/contig_{contig}/call_genotype/stats/doPost2/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_nSites.txt",
+			simid=SIMULATION_ID,
+			model_id=MODELS,
+			contig=CONTIGS,
+			depth=DEPTH,
+			rep=REP),
+	output:
+		"simulations/sim_demes_v2/collected_results/collect_feb23/collect230221/sim_demes_v2_doAmova2_call_genotype_nSites.txt"
+	shell:
+		"""
+		printf "nSites,Model,Contig,Rep,Depth\n" > {output}
+		for INFILE in {input};do
+
+			IN=$(basename ${{INFILE%_nSites.txt}})
+			MODEL=$(echo ${{IN}}|cut -d- -f2)
+			CONTIG=$(echo ${{IN}}|cut -d- -f3)
+			REP=$(echo ${{IN}}|cut -d- -f4|sed 's/rep//g')
+			DEPTH=$(echo ${{IN}}|cut -d- -f5|sed 's/d//g')
+
+			printf "$(cat ${{INFILE}}),${{MODEL}},${{CONTIG}},${{REP}},${{DEPTH}}\\n"
+		done >> {output}
+		"""
+
+rule collect_mean_avgNIndPerSite_230221:
+	input:
+		expand("simulations/{simid}/model_{model_id}/contig_{contig}/call_genotype/stats/doPost2/{simid}-{model_id}-{contig}-rep{rep}-d{depth}_avgNIndPerSite.txt",
+			simid=SIMULATION_ID,
+			model_id=MODELS,
+			contig=CONTIGS,
+			depth=DEPTH,
+			rep=REP),
+	output:
+		"simulations/sim_demes_v2/collected_results/collect_feb23/collect230221/sim_demes_v2_doAmova2_call_genotype_avgNIndPerSite.txt"
+	shell:
+		"""
+		printf "avgNIndPerSite,Model,Contig,Rep,Depth\\n" > {output}
+		for INFILE in {input};do
+
+			IN=$(basename ${{INFILE%_nSites.txt}})
+			MODEL=$(echo ${{IN}}|cut -d- -f2)
+			CONTIG=$(echo ${{IN}}|cut -d- -f3)
+			REP=$(echo ${{IN}}|cut -d- -f4|sed 's/rep//g')
+			DEPTH=$(echo ${{IN}}|cut -d- -f5|cut -d_ -f1|sed 's/d//g')
+
+			printf "$(cat ${{INFILE}}),${{MODEL}},${{CONTIG}},${{REP}},${{DEPTH}}\\n"
+		done >> {output}
+		"""
+
+# ################################################################################
+# ################################################################################
+# ################################################################################
 
 
 

@@ -7,7 +7,7 @@ for infile in "${@}";do
 	contig=$(echo ${infile%.amova.csv}| cut -d- -f3)
 	rep=$(echo ${infile%.amova.csv}| cut -d- -f4|sed 's/rep//g')
 	depth=$(echo ${infile%.amova.csv}| cut -d- -f5|sed 's/d//g'|cut -d_ -f1)
-	tole=$(echo ${infile%.amova.csv} | cut -d- -f5 | cut -d_ -f2 | sed 's/tole//g')
+	tole=$(dirname ${infile} | rev | cut -d/ -f1 | rev | cut -d_ -f3 | sed 's/tole//g')
 	for line in `cat ${infile} | grep "^Phi"`;do
 		printf "${line},${model},${contig},${rep},${depth},${tole},${type}\n";
 	done

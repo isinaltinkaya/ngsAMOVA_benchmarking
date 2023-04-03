@@ -68,6 +68,7 @@ read_gle_phi <- function(gle_phi_fn){
   gle_phi$Depth <- as.factor(gle_phi$Depth)
   gle_phi$AnalysisType <- as.factor(gle_phi$AnalysisType)
   gle_phi$Method <- as.factor(paste0("GLE_", gle_phi$Tole))
+  gle_phi$Tole<-as.factor(gle_phi$Tole)
   gle_phi$Level <- str_replace(gle_phi$Level, "Region_in_Total", "Phi_CT")
   gle_phi$Level <- str_replace(gle_phi$Level, "Population_in_Region", "Phi_SC")
   gle_phi$Level <- str_replace(gle_phi$Level, "Population_in_Total", "Phi_ST")
@@ -123,3 +124,18 @@ get_df <- function(true_phi_fn, gc_phi_fn, gle_phi_fn, nsu_gc_fn){
   return(df)
 }
 
+get_df2 <- function(true_phi, gc_phi, gle_phi, nsites_used){
+  phi_true_gc_rmse<-join_true_gc(true_phi, gc_phi)
+  phi_true_gle_rmse<-join_true_gle(true_phi, gle_phi)
+  dt<-get_dt(phi_true_gc_rmse, phi_true_gle_rmse)
+  df<-merge(dt, nsites_used, by=c("Model","Contig","Depth"))
+  ### convert names to phi notations
+  #reg in tot =phi_ct
+  #pop in reg =phi_sc
+  #pop in tot =phi_st
+  df$Level <- str_replace(df$Level, "Region_in_Total", "Phi_CT")
+  df$Level <- str_replace(df$Level, "Population_in_Region", "Phi_SC")
+  df$Level <- str_replace(df$Level, "Population_in_Total", "Phi_ST")
+  df$Level<-as.factor(df$Level)
+  return(df)
+}

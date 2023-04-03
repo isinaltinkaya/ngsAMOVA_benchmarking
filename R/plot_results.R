@@ -49,7 +49,7 @@ resdir="/home/isin/Mount/AMOVA/simulations/msprime/simulations/sim_demes_v2/coll
 ContigsToUse<-c(1,10,100)
 ContigsToUseId<-"contigs1-10-100"
 
-# contig_lens<-as.integer(levels(df$Contig))*1e6
+############################################################################################################
 
 for(model_id in modelList){
   gc_phi_fn<-paste0(resdir,"sim_demes_v2_genotype_calling_phi_",model_id,".csv")
@@ -288,6 +288,69 @@ names(phi_stat_lut)<-c("Phi_ST","Phi_CT","Phi_SC")
     ggsave(paste0("figures/phi_rmse_all_gle5_",ContigsToUseId,"_",model_id,"_log.png"), width=10, height=6, units="in", dpi=300)
 
 
-
-
 }
+
+############################################################################################################
+# arrange the 2 main plots into a panel
+
+df<-NULL
+for(model_id in modelList){
+  gc_phi_fn<-paste0(resdir,"sim_demes_v2_genotype_calling_phi_",model_id,".csv")
+  true_phi_fn<-paste0(resdir,"sim_demes_v2_truth_phi_",model_id,".csv")
+  gle_phi_fn<-paste0(resdir,"sim_demes_v2_genotype_likelihood_phi_",model_id,".csv")
+  nsu_gc_fn<-paste0(resdir,"sim_demes_v2_genotype_calling_mean_nSites_used_",model_id,".csv")
+
+  gc_phi <- read_gc_phi(gc_phi_fn) %>% filter(Contig %in% ContigsToUse, Model == model_id)
+  gle_phi <- read_gle_phi(gle_phi_fn) %>% filter(Contig %in% ContigsToUse, Model == model_id)
+  true_phi <- read_true_phi(true_phi_fn) %>% filter(Contig %in% ContigsToUse, Model == model_id)
+  nsu<-get_nSites_used(nsu_gc_fn)
+
+  df <- rbind(df,get_df2(true_phi = true_phi, gle_phi = gle_phi, gc_phi = gc_phi, nsites_used = nsu))
+}
+
+
+colormap<-c("#FC4E07","blue","black")
+# choose the method that seems to favor the other method the most
+method_i<-"GTC_2_0.3"
+
+p1<- 
+  df %>% 
+  filter(Model=="model1") %>%
+  filter(Method %in% c(method_i,"GLE_5")) %>% 
+  ggplot()+
+  geom_point(aes(x=Depth, y=log10(RMSE), color=Method,group=interaction(Method,Contig)))+
+  geom_line(aes(x=Depth, y=log10(RMSE), color=Method, group=interaction(Method,Contig),linetype=Contig))+
+  theme_bw()+
+  labs(x="Depth",y="RMSE (log10 transformed)",
+      color="Method")+
+  facet_wrap(~Level,scale="free", labeller= as_labeller(maketex, default=label_parsed))+
+  scale_y_continuous(n.breaks =20)+
+  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())+
+  scale_linetype_manual(name="Contig size",values=c("1"="dotted","10"="dashed","100"="solid"), labels=c("1"="1e6", "10"="1e7", "100"="1e8")) +
+  scale_color_manual(name="Method", labels=method_labels, values = colormap)+
+  labs(tag="A")+
+  theme(plot.tag = element_text(size=20, face="bold"))
+
+
+p2<- 
+  df %>% 
+  filter(Model=="model2") %>%
+  filter(Method %in% c(method_i,"GLE_5")) %>% 
+  ggplot()+
+  geom_point(aes(x=Depth, y=log10(RMSE), color=Method,group=interaction(Method,Contig)))+
+  geom_line(aes(x=Depth, y=log10(RMSE), color=Method, group=interaction(Method,Contig),linetype=Contig))+
+  theme_bw()+
+  labs(x="Depth",y="RMSE (log10 transformed)",
+      color="Method")+
+  facet_wrap(~Level,scale="free", labeller= as_labeller(maketex, default=label_parsed))+
+  scale_y_continuous(n.breaks =20)+
+  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())+
+  scale_linetype_manual(name="Contig size",values=c("1"="dotted","10"="dashed","100"="solid"), labels=c("1"="1e6", "10"="1e7", "100"="1e8")) +
+  scale_color_manual(name="Method", labels=method_labels, values = colormap)+
+  labs(tag="B")+
+  theme(plot.tag = element_text(size=20, face="bold"))
+  
+
+ggarrange(p1,p2,ncol=1, nrow=2, common.legend = TRUE, legend = "bottom")
+warnings()
+ggsave(paste0("figures/phi_rmse_",method_i,"_gle5_",ContigsToUseId,"_log_panel.png"), width=6, height=10, units="in", dpi=300, bg="white")

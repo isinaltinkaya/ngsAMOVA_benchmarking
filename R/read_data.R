@@ -15,6 +15,8 @@ library(reshape2)
 library(latex2exp)
 library(scales)
 library(viridis)
+# library(gridExtra)
+library(ggpubr)
 ############################################################################################################
 # FUNCTIONS
 

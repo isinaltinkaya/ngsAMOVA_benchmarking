@@ -1,2 +1,5 @@
 *.swp
 *workspace
+simulations/sim/
+simulations/getFasta/getFasta
+simulations/.snakemake/

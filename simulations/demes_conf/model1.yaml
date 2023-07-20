@@ -1,0 +1,53 @@
+description: model1
+time_units: generations
+
+demes:
+    - name: ANC
+      description: ANC population
+      epochs:
+          - {end_time: 100e3, start_size: 10000}
+    
+    - name: B1
+      ancestors: [ANC]
+      epochs:
+          - {end_time: 10e3, start_size: 5000}
+
+    - name: B2
+      ancestors: [ANC]
+      epochs:
+          - {end_time: 10e3, start_size: 5000}
+
+    - name: B1C1
+      ancestors: [B1]
+      epochs:
+          - {end_time: 0, start_size: 2500}
+
+    - name: B1C2
+      description: x
+      ancestors: [B1]
+      epochs:
+          - {end_time: 0, start_size: 2500}
+
+    - name: B2C1
+      description: x
+      ancestors: [B2]
+      epochs:
+          - {end_time: 0, start_size: 2500}
+
+
+    - name: B2C2
+      description: x
+      ancestors: [B2]
+      epochs:
+          - {end_time: 0, start_size: 2500}
+
+
+
+
+
+migrations:
+    - {demes: [B1C1,B1C2], rate: 1e-03}
+    - {demes: [B2C1,B2C2], rate: 1e-03}
+    - {demes: [B1,B2], rate: 5e-04}
+
+

@@ -76,7 +76,7 @@ df%>% filter(Contig%in%c(1,10,100))%>%
   scale_y_continuous(n.breaks =20)+
   theme(legend.position="bottom")+
   linetype3
-
+# 
 
 # scale free, y log
 df%>% filter(Contig%in%c(1,10,100))%>%

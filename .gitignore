@@ -3,3 +3,7 @@
 simulations/sim/
 simulations/getFasta/getFasta
 simulations/.snakemake/
+.Rproj.user
+.RData
+.Rhistory
+*Rproj
